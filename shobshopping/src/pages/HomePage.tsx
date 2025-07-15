@@ -85,7 +85,7 @@ export default function HomePage() {
                   <Zap className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  ShopVibe ✨
+                  ShobShopping ✨
                 </span>
               </div>
             </div>
@@ -111,7 +111,7 @@ export default function HomePage() {
                 <ShoppingCart className="w-5 h-5" />
                 <Badge className="ml-1 bg-red-500 text-white">3</Badge>
               </Button>
-              <Link to="/auth/login">
+              <Link to="/login">
                 <Button
                   variant="outline"
                   size="sm"
@@ -297,13 +297,6 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-800">Why Choose ShopVibe? 💫</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-green-400 to-teal-500 rounded-full flex items-center justify-center">
-                <Shield className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Secure Shopping 🔒</h3>
-              <p className="text-gray-600">
-                Your data and payments are always protected with enterprise-grade security.
-              </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">

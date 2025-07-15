@@ -30,9 +30,10 @@ export default function App() {
           <Route path="/seller-profile" element={<SellerProfilePage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/buyer-profile" element={<BuyerProfilePage />} />
+          <Route path="/profile" element={<BuyerProfilePage />} />
           {/* Add more routes as needed */}
           {/* <Route path="/not-found" element={<NotFoundPage />} /> */}
-          
+
           {/* <Route path="*" element={<NotFoundPage />} /> */}
         </Routes>
       </main>

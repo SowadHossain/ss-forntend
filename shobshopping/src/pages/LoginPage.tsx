@@ -30,9 +30,9 @@ export default function AuthPage() {
     if (loginData.email.includes("admin")) {
       window.location.href = "/admin"
     } else if (loginData.email.includes("seller")) {
-      window.location.href = "/dashboard/seller"
+      window.location.href = "/seller-dashboard"
     } else {
-      window.location.href = "/dashboard/buyer"
+      window.location.href = "/buyer-dashboard"
     }
   }
 
@@ -41,9 +41,9 @@ export default function AuthPage() {
     console.log("Register:", registerData)
     // Mock registration logic
     if (registerData.userType === "seller") {
-      window.location.href = "/dashboard/seller"
+      window.location.href = "/seller-dashboard"
     } else {
-      window.location.href = "/dashboard/buyer"
+      window.location.href = "/buyer-dashboard"
     }
   }
 
@@ -58,7 +58,7 @@ export default function AuthPage() {
                 <Zap className="w-7 h-7 text-white" />
               </div>
               <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                ShopVibe ✨
+                ShobShopping ✨
               </span>
             </div>
             <h1 className="text-4xl font-bold text-gray-800 mb-4">Welcome to the Future of Shopping! 🚀</h1>
@@ -70,13 +70,6 @@ export default function AuthPage() {
 
           <div className="space-y-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-teal-500 rounded-full flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">Secure & Trusted 🔒</h3>
-                <p className="text-gray-600">Bank-level security for all transactions</p>
-              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
