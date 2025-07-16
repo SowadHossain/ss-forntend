@@ -1,13 +1,11 @@
-// src/pages/ProductsPage.tsx
-
 import React, { useState } from "react"
 import NavbarSection from "../components/HomePage/NavbarSection"
 import FooterSection from "../components/HomePage/FooterSection"
-import ProductsHeader from "../components/ProductsPage/ProductsHeader"
 import FilterSidebar from "../components/ProductsPage/FilterSidebar"
 import ProductGrid from "../components/ProductsPage/ProductGrid"
 import BreadcrumbAndTags from "../components/ProductsPage/BreadcrumbAndTags"
 import SubNavbar from "../components/common/SubNavbar"
+import Pagination from "../components/common/Pagination"
 
 import { mockCategories } from "../lib/mock/mockCategories"
 import { mockSellers } from "../lib/mock/mockSellers"
@@ -20,8 +18,16 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedSellers, setSelectedSellers] = useState<string[]>([])
-  const [activeTags, setActiveTags] = useState<string[]>(["Best Value", "Free Shipping"]) // you can change these dynamically
-  const categoryPath = ["Home", "Electronics"] // dynamic later
+  const [activeTags, setActiveTags] = useState<string[]>(["Best Value", "Free Shipping"])
+  const categoryPath = ["Home", "Electronics"]
+
+  // Pagination logic
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 12
+  const paginatedProducts = mockProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   const handleCategoryChange = (category: string, checked: boolean) => {
     setSelectedCategories((prev) =>
@@ -63,7 +69,13 @@ export default function ProductsPage() {
         </aside>
 
         <main className="flex-1">
-          <ProductGrid products={mockProducts} viewMode={viewMode} />
+          <ProductGrid products={paginatedProducts} viewMode={viewMode} />
+          <Pagination
+            currentPage={currentPage}
+            totalItems={mockProducts.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
         </main>
       </div>
 

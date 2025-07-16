@@ -1,5 +1,3 @@
-
-
 import React from "react"
 import { ChevronDown } from "lucide-react"
 import { mockCategories } from "../../lib/mock/mockCategories"
@@ -17,7 +15,7 @@ export default function SubNavbar() {
               </button>
 
               {/* Dropdown */}
-              <div className="absolute left-0 top-full mt-2 w-72 bg-white border border-gray-200 shadow-md rounded-md p-3 z-50 hidden group-hover:block">
+              <div className="absolute left-0 top-full mt-1 w-72 bg-white border border-gray-200 shadow-md rounded-md p-3 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
                 <ul className="max-h-64 overflow-y-auto space-y-1">
                   {cat.subcategories.map((sub) => (
                     <li
