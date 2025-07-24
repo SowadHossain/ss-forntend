@@ -22,8 +22,8 @@ export default function HomePage() {
       <TopSellersSection sellers={mockSellers} />
 
       {/* Showcase top 3 categories with 5 subcategory items as mock products */}
-      {mockCategories.slice(0, 3).map((category, index) => {
-        const products = category.subcategories.slice(0, 5).map((sub, i) => ({
+      {mockCategories.map((category, index) => {
+        const products = category.subcategories.slice(0, 4).map((sub, i) => ({
           id: index * 10 + i,
           name: sub.name,
           price: parseFloat((Math.random() * 50 + 10).toFixed(2)),
