@@ -25,3 +25,60 @@ Thumbs.db
 
 # optional: Mac/Linux swap files
 *.swp
+# Python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+*.pyo
+*.pyd
+*.pdb
+*.log
+*.pot
+*.mo
+*.pyc
+
+# Env
+.env
+venv/
+.env.*
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+*.sqlite3
+*.db
+
+# VS Code / IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# macOS
+.DS_Store
+
+# Node (if using frontend inside the same repo)
+node_modules/
+dist/
+build/
+
+# Testing/coverage
+htmlcov/
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Docker (if used later)
+*.pid
+*.seed
+*.bak
+*.pid.lock
+
+# Django migrations
+**/migrations/
+!*/migrations/__init__.py
