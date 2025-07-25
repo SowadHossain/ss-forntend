@@ -78,3 +78,7 @@ coverage.xml
 *.seed
 *.bak
 *.pid.lock
+
+# Django migrations
+**/migrations/
+!*/migrations/__init__.py

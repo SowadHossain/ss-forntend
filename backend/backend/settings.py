@@ -29,7 +29,17 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # Local apps
+    'accounts',
     'products',
+    'cart',
+    'orders',
+    'payments',
+    'tickets',
+    'reviews',
+    'qna',
+    'coupons',
+    'analytics',
+    'onboarding',
 ]
 
 MIDDLEWARE = [
@@ -101,13 +111,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Django REST Framework settings
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-    ]
+    ],
 }
 
 # CORS settings (allow all during dev)
 CORS_ALLOW_ALL_ORIGINS = True
+
+AUTH_USER_MODEL = 'accounts.CustomUser'
+
