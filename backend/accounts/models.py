@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -43,3 +44,18 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class SellerProfile(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='seller_profile')
+
+    store_name = models.CharField(max_length=100)
+    store_description = models.TextField(blank=True)
+    location = models.CharField(max_length=255)
+    website = models.URLField(blank=True)
+    logo = models.ImageField(upload_to='seller_logos/', null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.store_name

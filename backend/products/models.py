@@ -11,6 +11,9 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name_plural = "Categories"
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=30, unique=True)
@@ -32,6 +35,18 @@ class Product(models.Model):
         ('CASHBACK', 'Cashback'),
     ]
 
+    STATUS_CHOICES = [
+        ('DRAFT', 'Draft'),
+        ('ACTIVE', 'Active'),
+        ('INACTIVE', 'Inactive'),
+    ]
+
+    MODERATION_CHOICES = [
+        ('IN_REVIEW', 'In Review'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    ]
+
     seller = models.ForeignKey(CustomUser, on_delete=models.CASCADE, limit_choices_to={'role': 'SELLER'})
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -44,6 +59,9 @@ class Product(models.Model):
 
     badge = models.CharField(max_length=20, choices=BADGE_CHOICES, null=True, blank=True)
     label = models.CharField(max_length=20, choices=LABEL_CHOICES, null=True, blank=True)
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='DRAFT')
+    moderation_status = models.CharField(max_length=15, choices=MODERATION_CHOICES, default='IN_REVIEW')
 
     image = models.ImageField(upload_to='products/', null=True, blank=True)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
