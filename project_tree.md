@@ -3,13 +3,69 @@
 ss-forntend
 ├─ README.md
 ├─ backend
+│  ├─ accounts
+│  │  ├─ __init__.py
+│  │  ├─ admin.py
+│  │  ├─ apps.py
+│  │  ├─ models.py
+│  │  ├─ permissions.py
+│  │  ├─ serializers.py
+│  │  ├─ tests.py
+│  │  ├─ urls.py
+│  │  └─ views.py
+│  ├─ analytics
+│  │  ├─ __init__.py
+│  │  ├─ admin.py
+│  │  ├─ apps.py
+│  │  ├─ models.py
+│  │  ├─ tests.py
+│  │  └─ views.py
 │  ├─ backend
 │  │  ├─ __init__.py
 │  │  ├─ asgi.py
 │  │  ├─ settings.py
 │  │  ├─ urls.py
 │  │  └─ wsgi.py
+│  ├─ cart
+│  │  ├─ __init__.py
+│  │  ├─ admin.py
+│  │  ├─ apps.py
+│  │  ├─ models.py
+│  │  ├─ serializers.py
+│  │  ├─ tests.py
+│  │  ├─ urls.py
+│  │  └─ views.py
+│  ├─ coupons
+│  │  ├─ __init__.py
+│  │  ├─ admin.py
+│  │  ├─ apps.py
+│  │  ├─ models.py
+│  │  ├─ tests.py
+│  │  └─ views.py
 │  ├─ manage.py
+│  ├─ onboarding
+│  │  ├─ __init__.py
+│  │  ├─ admin.py
+│  │  ├─ apps.py
+│  │  ├─ models.py
+│  │  ├─ tests.py
+│  │  └─ views.py
+│  ├─ orders
+│  │  ├─ __init__.py
+│  │  ├─ admin.py
+│  │  ├─ apps.py
+│  │  ├─ models.py
+│  │  ├─ serializers.py
+│  │  ├─ tests.py
+│  │  ├─ urls.py
+│  │  └─ views.py
+│  ├─ payments
+│  │  ├─ __init__.py
+│  │  ├─ admin.py
+│  │  ├─ apps.py
+│  │  ├─ models.py
+│  │  ├─ tests.py
+│  │  └─ views.py
 │  ├─ products
 │  │  ├─ __init__.py
 │  │  ├─ admin.py
@@ -17,8 +73,35 @@ ss-forntend
 │  │  ├─ models.py
 │  │  ├─ serializers.py
 │  │  ├─ tests.py
+│  │  ├─ urls.py
 │  │  └─ views.py
-│  └─ requirements.txt
+│  ├─ project_tree.md
+│  ├─ qna
+│  │  ├─ __init__.py
+│  │  ├─ admin.py
+│  │  ├─ apps.py
+│  │  ├─ models.py
+│  │  ├─ tests.py
+│  │  └─ views.py
+│  ├─ requirements.txt
+│  ├─ reviews
+│  │  ├─ __init__.py
+│  │  ├─ admin.py
+│  │  ├─ apps.py
+│  │  ├─ models.py
+│  │  ├─ serializers.py
+│  │  ├─ tests.py
+│  │  ├─ urls.py
+│  │  └─ views.py
+│  └─ tickets
+│     ├─ __init__.py
+│     ├─ admin.py
+│     ├─ apps.py
+│     ├─ models.py
+│     ├─ serializers.py
+│     ├─ tests.py
+│     ├─ urls.py
+│     └─ views.py
 ├─ package-lock.json
 └─ shobshopping
    ├─ README.md
@@ -119,6 +202,7 @@ ss-forntend
    │  │  └─ use-toast.ts
    │  ├─ index.css
    │  ├─ lib
+   │  │  ├─ api.ts
    │  │  ├─ mock
    │  │  │  ├─ mockCategories.tsx
    │  │  │  ├─ mockProducts.tsx

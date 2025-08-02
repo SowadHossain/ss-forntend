@@ -10,7 +10,10 @@ class CartViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return CartItem.objects.filter(user=self.request.user)
+        user = self.request.user
+        if not user.is_authenticated or getattr(self, 'swagger_fake_view', False):
+            return CartItem.objects.none()
+        return CartItem.objects.filter(user=user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -24,7 +27,10 @@ class WishlistViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return WishlistItem.objects.filter(user=self.request.user)
+        user = self.request.user
+        if not user.is_authenticated or getattr(self, 'swagger_fake_view', False):
+            return WishlistItem.objects.none()
+        return WishlistItem.objects.filter(user=user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -36,7 +42,6 @@ class WishlistViewSet(viewsets.ModelViewSet):
     def move_to_cart(self, request, pk=None):
         wishlist_item = self.get_object()
 
-        # Check if already in cart
         cart_item, created = CartItem.objects.get_or_create(
             user=request.user,
             product=wishlist_item.product,

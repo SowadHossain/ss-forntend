@@ -4,7 +4,6 @@ from rest_framework.decorators import action
 
 from .models import Order
 from .serializers import OrderSerializer
-from accounts.permissions import IsBuyer, IsAdmin
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -12,8 +11,11 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Order.objects.none()
+
         user = self.request.user
-        if user.role == 'ADMIN':
+        if hasattr(user, 'role') and user.role == 'ADMIN':
             return Order.objects.all().order_by('-created_at')
         return Order.objects.filter(user=user).order_by('-created_at')
 

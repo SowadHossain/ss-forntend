@@ -7,10 +7,16 @@ class Question(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='questions')
     question = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    answered = models.BooleanField(default=False)
 
+    def __str__(self):
+        return self.question[:50]
 
 class Answer(models.Model):
     question = models.OneToOneField(Question, on_delete=models.CASCADE, related_name='answer')
-    responder = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True)
     answer = models.TextField()
+    answered_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.answer[:50]

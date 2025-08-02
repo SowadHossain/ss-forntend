@@ -4,17 +4,19 @@ from rest_framework.decorators import action
 from django.utils.timezone import now
 from .models import Ticket, TicketMessage
 from .serializers import TicketSerializer, TicketMessageSerializer
-from accounts.permissions import IsBuyer, IsAdmin
 
 
 class TicketViewSet(viewsets.ModelViewSet):
-    queryset = Ticket.objects.all().order_by('-created_at')
     serializer_class = TicketSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        # 🛡 Short-circuit Swagger schema generation
+        if getattr(self, 'swagger_fake_view', False):
+            return Ticket.objects.none()
+
         user = self.request.user
-        if user.role == 'ADMIN':
+        if hasattr(user, 'role') and user.role == 'ADMIN':
             return Ticket.objects.all().order_by('-created_at')
         return Ticket.objects.filter(user=user).order_by('-created_at')
 
@@ -32,12 +34,14 @@ class TicketViewSet(viewsets.ModelViewSet):
 
 
 class TicketMessageViewSet(viewsets.ModelViewSet):
-    queryset = TicketMessage.objects.all().order_by('sent_at')
     serializer_class = TicketMessageSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return TicketMessage.objects.none()
+
         user = self.request.user
-        if user.role == 'ADMIN':
+        if hasattr(user, 'role') and user.role == 'ADMIN':
             return TicketMessage.objects.all()
         return TicketMessage.objects.filter(sender=user)
