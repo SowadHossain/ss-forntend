@@ -8,7 +8,7 @@ export const mockSellers = [
       image: "/placeholder.svg",
     },
     {
-      name: "AudioMax",
+      name: "Walton",
       rating: 4.8,
       sales: "8.5k+",
       image: "/placeholder.svg",

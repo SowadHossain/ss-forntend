@@ -1,63 +1,91 @@
+import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Separator } from "../components/ui/separator";
 
-import React, { useState } from "react"
-import { Link } from "react-router-dom";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react"
-
-import { Button } from "../components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { Input } from "../components/ui/input"
-import { Separator } from "../components/ui/separator"
-import { Badge } from "../components/ui/badge"
-
-const initialCartItems = [
-  {
-    id: 1,
-    name: "Wireless Bluetooth Headphones",
-    price: 79.99,
-    originalPrice: 99.99,
-    quantity: 1,
-    image: "/placeholder.svg?height=100&width=100",
-    seller: "TechStore Pro",
-    inStock: true,
-    freeShipping: true,
-  },
-  {
-    id: 2,
-    name: "Smart Fitness Watch",
-    price: 199.99,
-    quantity: 1,
-    image: "/placeholder.svg?height=100&width=100",
-    seller: "FitTech",
-    inStock: true,
-    freeShipping: false,
-  },
-  {
-    id: 3,
-    name: "Organic Cotton T-Shirt",
-    price: 24.99,
-    originalPrice: 34.99,
-    quantity: 2,
-    image: "/placeholder.svg?height=100&width=100",
-    seller: "EcoFashion",
-    inStock: true,
-    freeShipping: true,
-  },
-]
+import { API } from "../lib/api";
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState(initialCartItems)
+  const [cartItems, setCartItems] = useState<any[]>([])
   const [promoCode, setPromoCode] = useState("")
+  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+  const isAuthenticated =
+    !!sessionStorage.getItem("accessToken") || !!localStorage.getItem("accessToken")
 
-  const updateQuantity = (id: number, newQuantity: number) => {
+  // Fetch cart items from API on mount
+  useEffect(() => {
+    if (!isAuthenticated) {
+      // Not logged in — redirect to login page
+      navigate("/login")
+      return
+    }
+
+    const fetchCart = async () => {
+      setLoading(true)
+      try {
+        const data = await API.getCart()
+        console.log("API.getCart response:", data)
+
+        const rawItems: any[] = Array.isArray(data)
+          ? data
+          : data.results || data.items || data.cart || []
+
+        const normalized = rawItems.map(it => ({
+          // keep cart item id for update/delete calls
+          id: it.id,
+          quantity: it.quantity ?? 1,
+          addedAt: it.added_at,
+          // flatten product fields for easier rendering
+          productId: it.product?.id,
+          name: it.product?.name,
+          price: parseFloat(it.product?.price ?? 0),
+          originalPrice: parseFloat(it.product?.original_price ?? 0) || undefined,
+          image: it.product?.image,
+          seller: it.product?.seller,
+          inStock: (it.product?.stock_quantity ?? 0) > 0,
+          freeShipping: !!it.product?.free_shipping
+        }))
+
+        setCartItems(normalized)
+      } catch (err) {
+        console.error("Failed to fetch cart:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCart()
+  }, [navigate, isAuthenticated])
+
+  // Update quantity using API
+  const updateQuantity = async (id: number, newQuantity: number) => {
     if (newQuantity < 1) return
-    setCartItems((items) => items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)))
+    try {
+      await API.updateCartItem(id, { product_id: id, quantity: newQuantity })
+      setCartItems(items =>
+        items.map(item => item.id === id ? { ...item, quantity: newQuantity } : item)
+      )
+    } catch (err) {
+      // handle error
+    }
   }
 
-  const removeItem = (id: number) => {
-    setCartItems((items) => items.filter((item) => item.id !== id))
+  // Remove item using API
+  const removeItem = async (id: number) => {
+    try {
+      await API.deleteCartItem(id)
+      setCartItems(items => items.filter(item => item.id !== id))
+    } catch (err) {
+      // handle error
+    }
   }
 
+  // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const savings = cartItems.reduce((sum, item) => {
     if (item.originalPrice) {
@@ -69,15 +97,27 @@ export default function CartPage() {
   const tax = subtotal * 0.08 // 8% tax
   const total = subtotal + shippingCost + tax
 
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 flex justify-center items-center">
+        <img
+          src="https://shobshopping.com/logo.png"
+          alt="Logo"
+          className="w-20 h-20 animate-bounce mb-4"
+        />
+      </div>
+    )
+  }
+
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 text-gray-700 border-t border-red-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <ShoppingBag className="w-24 h-24 text-gray-300 mx-auto mb-6" />
+            <ShoppingBag className="w-24 h-24 text-red-300 mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Your cart is empty</h1>
             <p className="text-gray-600 mb-8">Looks like you haven't added any items to your cart yet.</p>
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="bg-red-600 hover:bg-red-700 text-white">
               <Link to ="/products">Continue Shopping</Link>
             </Button>
           </div>
@@ -87,25 +127,25 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 text-gray-700 border-t border-red-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center mb-8">
-          <Button variant="ghost" asChild className="mr-4">
+          <Button variant="ghost" asChild className="mr-4 text-red-600">
             <Link to="/products">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Continue Shopping
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-red-600">Shopping Cart</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="border border-red-100 bg-white">
               <CardHeader>
-                <CardTitle>Cart Items ({cartItems.length})</CardTitle>
+                <CardTitle className="text-red-600">Cart Items ({cartItems.length})</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="divide-y">
@@ -123,29 +163,29 @@ export default function CartPage() {
                           <div className="flex items-start justify-between">
                             <div>
                               <Link
-                                to={`/products/${item.id}`}
-                                className="text-lg font-semibold text-gray-900 hover:text-blue-600"
+                                to={`/products/${item.productId}`}
+                                className="text-lg font-semibold text-gray-900 hover:text-red-600"
                               >
                                 {item.name}
                               </Link>
                               <p className="text-sm text-gray-600 mt-1">
                                 Sold by{" "}
                                 <Link
-                                  to={`/sellers/${item.seller.toLowerCase().replace(" ", "-")}`}
-                                  className="text-blue-600 hover:underline"
+                                  to={`/sellers/${item.seller?.toLowerCase().replace(" ", "-")}`}
+                                  className="text-red-600 hover:underline"
                                 >
                                   {item.seller}
                                 </Link>
                               </p>
                               <div className="flex items-center mt-2 space-x-2">
                                 {item.inStock ? (
-                                  <Badge variant="secondary" className="text-green-700 bg-green-100">
+                                  <Badge variant="secondary" className="text-red-700 bg-red-100">
                                     In Stock
                                   </Badge>
                                 ) : (
                                   <Badge variant="destructive">Out of Stock</Badge>
                                 )}
-                                {item.freeShipping && <Badge variant="outline">Free Shipping</Badge>}
+                                {item.freeShipping && <Badge variant="outline" className="text-red-600 border-red-100">Free Shipping</Badge>}
                               </div>
                             </div>
                             <Button
@@ -180,11 +220,11 @@ export default function CartPage() {
 
                             <div className="text-right">
                               <div className="text-lg font-bold text-gray-900">
-                                ${(item.price * item.quantity).toFixed(2)}
+                                BDT {(item.price * item.quantity).toFixed(2)}
                               </div>
                               {item.originalPrice && (
                                 <div className="text-sm text-gray-500 line-through">
-                                  ${(item.originalPrice * item.quantity).toFixed(2)}
+                                  BDT {(item.originalPrice * item.quantity).toFixed(2)}
                                 </div>
                               )}
                             </div>
@@ -198,9 +238,9 @@ export default function CartPage() {
             </Card>
 
             {/* Promo Code */}
-            <Card className="mt-6">
+            <Card className="mt-6 border border-red-100 bg-white">
               <CardContent className="p-6">
-                <h3 className="font-semibold mb-4">Promo Code</h3>
+                <h3 className="font-semibold mb-4 text-red-600">Promo Code</h3>
                 <div className="flex space-x-4">
                   <Input
                     placeholder="Enter promo code"
@@ -208,7 +248,7 @@ export default function CartPage() {
                     onChange={(e) => setPromoCode(e.target.value)}
                     className="flex-1"
                   />
-                  <Button variant="outline">Apply</Button>
+                  <Button variant="outline" className="text-red-600 border-red-100">Apply</Button>
                 </div>
               </CardContent>
             </Card>
@@ -216,41 +256,41 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div>
-            <Card className="sticky top-8">
+            <Card className="sticky top-8 border border-red-100 bg-white">
               <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+                <CardTitle className="text-red-600">Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>Subtotal ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>BDT {subtotal.toFixed(2)}</span>
                 </div>
 
                 {savings > 0 && (
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-red-600">
                     <span>Savings</span>
-                    <span>-${savings.toFixed(2)}</span>
+                    <span>- BDT {savings.toFixed(2)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>{shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}</span>
+                  <span className={shippingCost === 0 ? "text-green-600" : ""}>{shippingCost === 0 ? "Free" : `BDT ${shippingCost.toFixed(2)}`}</span>
                 </div>
 
                 <div className="flex justify-between">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>BDT {tax.toFixed(2)}</span>
                 </div>
 
                 <Separator />
 
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>BDT {total.toFixed(2)}</span>
                 </div>
 
-                <Button size="lg" className="w-full" asChild>
+                <Button size="lg" className="w-full bg-red-600 hover:bg-red-700 text-white" asChild>
                   <Link to="/checkout">Proceed to Checkout</Link>
                 </Button>
 

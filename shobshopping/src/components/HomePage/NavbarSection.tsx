@@ -1,209 +1,523 @@
-import React, { useState } from "react"
-import { Link } from "react-router-dom"
-import {
-  Zap,
-  Search,
-  Heart,
-  ShoppingCart,
-  User,
-  Menu,
-  X,
-} from "lucide-react"
+import { ChevronDown, Heart, Menu, Search, ShoppingCart, User, X } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { API } from "../../lib/api"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
-import { Badge } from "../ui/badge"
-import { mockCategories } from "../../lib/mock/mockCategories"
 
-export default function NavbarSection() {
+// Use public logo to avoid bundler path/type issues
+const logoPublic = "/logo.png"
+
+interface Category {
+  id: string | number
+  name: string
+  slug?: string
+  // Add other category fields as needed
+}
+
+interface CartItem {
+  id?: string | number
+  quantity?: number
+  qty?: number
+  product?: {
+    quantity?: number
+    qty?: number
+  }
+}
+
+interface Profile {
+  id?: string | number
+  name?: string
+  email?: string
+  role?: string
+  user?: {
+    name?: string
+    role?: string
+  }
+}
+
+export default function Navbar() {
+  const navigate = useNavigate()
+
   const [searchQuery, setSearchQuery] = useState("")
   const [mobileOpen, setMobileOpen] = useState(false)
-  const cartCount = 3
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
+
+  // Local cart state
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Dropdown states
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
+  const [isCategoriesDropdownOpen, setIsCategoriesDropdownOpen] = useState(false)
+  
+  const profileDropdownRef = useRef<HTMLDivElement | null>(null)
+  const categoriesDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "Products", path: "/products" },
-    { name: "Categories", path: "/categories" },
+    { name: "Categories", path: "/categories", hasDropdown: true },
     { name: "Deals", path: "/deals" },
   ]
 
+  // Load categories from API
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setLoadingCategories(true)
+        const data = await API.getCategories()
+        // Handle different API response structures
+        const categoryList = Array.isArray(data) 
+          ? data 
+          : data.results ?? data.categories ?? data.data ?? []
+        setCategories(categoryList.slice(0, 8)) // Limit to 8 categories
+      } catch (error) {
+        console.error("Failed to load categories:", error)
+        setCategories([])
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
+
+    loadCategories()
+  }, [])
+
+  // Load cart data
+  useEffect(() => {
+    let mounted = true
+    const loadCart = async () => {
+      const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken")
+      if (token) {
+        try {
+          const data = await API.getCart()
+          const rawItems: CartItem[] = Array.isArray(data) 
+            ? data 
+            : data.results ?? data.items ?? data.cart ?? []
+          if (mounted) setCartItems(rawItems)
+        } catch (err) {
+          console.error("Failed to load cart:", err)
+          if (mounted) {
+            // Fallback to localStorage
+            const local = localStorage.getItem("cart")
+            setCartItems(local ? JSON.parse(local) : [])
+          }
+        }
+      } else {
+        const local = localStorage.getItem("cart")
+        if (mounted) setCartItems(local ? JSON.parse(local) : [])
+      }
+    }
+    loadCart()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  // Load user profile
+  useEffect(() => {
+    const loadProfile = async () => {
+      const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken")
+      if (token) {
+        try {
+          const data = await API.getProfile()
+          setProfile(data)
+        } catch (error) {
+          console.error("Failed to load profile:", error)
+          setProfile(null)
+        }
+      }
+      setLoading(false)
+    }
+    loadProfile()
+  }, [])
+
+  // Calculate cart count
+  const cartCount = useMemo(() => {
+    if (!Array.isArray(cartItems)) return 0
+    return cartItems.reduce((sum, item) => {
+      const q = item?.quantity ?? item?.qty ?? item?.product?.quantity ?? item?.product?.qty ?? 0
+      return sum + (Number(q) || 0)
+    }, 0)
+  }, [cartItems])
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target as Node)) {
+        setIsProfileDropdownOpen(false)
+      }
+      if (categoriesDropdownRef.current && !categoriesDropdownRef.current.contains(e.target as Node)) {
+        setIsCategoriesDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  // Close dropdowns on Esc
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setIsProfileDropdownOpen(false)
+        setIsCategoriesDropdownOpen(false)
+      }
+    }
+    document.addEventListener("keydown", handleKey)
+    return () => document.removeEventListener("keydown", handleKey)
+  }, [])
+
+  // Handle search
+  const handleSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
+      setMobileOpen(false)
+    }
+  }, [searchQuery, navigate])
+
+  // Handle logout
+  const handleLogout = useCallback(() => {
+    try {
+      sessionStorage.removeItem("accessToken")
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("cart") // Clear local cart on logout
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+    setProfile(null)
+    setCartItems([])
+    setIsProfileDropdownOpen(false)
+    navigate("/login")
+  }, [navigate])
+
+  // Generate category URL
+  const getCategoryUrl = useCallback((category: Category) => {
+    const slug = category.slug || category.name.toLowerCase().replace(/\s+/g, "-")
+    return `/categories/${encodeURIComponent(slug)}`
+  }, [])
+
+  // Determine dashboard path based on user role
+  const dashboardPath = useMemo(() => {
+    const role = profile?.role?.toLowerCase() || profile?.user?.role?.toLowerCase()
+    return role === "seller" ? "/seller-dashboard" : "/buyer-dashboard"
+  }, [profile])
+
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 w-full overflow-x-hidden">
+    <header
+      className="fixed lg:sticky top-0 left-0 right-0 z-[9999] w-full backdrop-blur-sm bg-gradient-to-br from-red-50 via-white to-red-50 border-b border-red-100 shadow-sm text-gray-700"
+    >
+      {/* Main Navigation Row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 w-full">
-          {/* Left: Logo + Hamburger */}
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Left: Mobile menu + Logo */}
+          <div className="flex items-center space-x-3">
             <button
-              className="lg:hidden text-gray-600 hover:text-blue-600"
+              className="lg:hidden p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle mobile menu"
             >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                ShobShopping
-              </span>
+            <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
+              <img src={logoPublic} alt="Logo" className="h-10 w-auto" />
+              <img src="/text_ss.png" alt="Site Name" className="hidden md:block lg:block h-6 w-auto rounded" />
             </Link>
           </div>
 
           {/* Center: Desktop Search */}
           <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <form onSubmit={handleSearch} className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Search for products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border-gray-200 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                className="pl-10 pr-12 py-2.5 w-full border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-white rounded-lg"
               />
-            </div>
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+              >
+                Search
+              </button>
+            </form>
           </div>
 
-          {/* Right: Icons */}
-          <div className="flex items-center space-x-3">
-            {/* Desktop Nav Links */}
-            <div className="hidden lg:flex space-x-6 mr-4">
+          {/* Right: Navigation + Actions */}
+          <div className="flex items-center space-x-1">
+            {/* Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center space-x-1 mr-2">
               {navLinks.map((link, index) =>
-                link.name === "Categories" ? (
-                  <div key={index} className="relative group">
-                    <button className="text-gray-600 hover:text-blue-600 font-medium text-sm">
+                link.hasDropdown ? (
+                  <div key={index} className="relative" ref={categoriesDropdownRef}>
+                    <button
+                      className="inline-flex items-center px-3 py-2 text-gray-700 hover:text-red-600 font-medium text-sm transition-colors rounded-md hover:bg-red-50"
+                      onClick={() => setIsCategoriesDropdownOpen(!isCategoriesDropdownOpen)}
+                      aria-haspopup="menu"
+                      aria-expanded={isCategoriesDropdownOpen}
+                    >
                       {link.name}
+                      <ChevronDown className={`ml-1 w-4 h-4 transition-transform ${isCategoriesDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    <div className="absolute left-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded shadow-lg z-50 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition">
-                      <ul className="py-2">
-                        {mockCategories.slice(0, 6).map((cat, i) => (
-                          <li key={i}>
-                            <Link
-                              to={`/categories/${encodeURIComponent(
-                                cat.name.toLowerCase().replace(/\s+/g, "-")
-                              )}`}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              {cat.name}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    
+                    {isCategoriesDropdownOpen && (
+                      <div className="absolute left-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                        <div className="py-2 max-h-80 overflow-y-auto">
+                          {loadingCategories ? (
+                            <div className="px-4 py-3 text-sm text-gray-500">Loading categories...</div>
+                          ) : categories.length > 0 ? (
+                            <>
+                              {categories.map((category, i) => (
+                                <Link
+                                  key={category.id || i}
+                                  to={getCategoryUrl(category)}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                  onClick={() => setIsCategoriesDropdownOpen(false)}
+                                >
+                                  {category.name}
+                                </Link>
+                              ))}
+                              {/* <div className="border-t border-gray-100 mt-2">
+                                <Link
+                                  to="/categories"
+                                  className="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
+                                  onClick={() => setIsCategoriesDropdownOpen(false)}
+                                >
+                                  View All Categories →
+                                </Link>
+                              </div> */}
+                            </>
+                          ) : (
+                            <div className="px-4 py-3 text-sm text-gray-500">No categories available</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <Link
                     key={index}
                     to={link.path}
-                    className="text-gray-600 hover:text-blue-600 font-medium text-sm"
+                    className="px-3 py-2 text-gray-700 hover:text-red-600 font-medium text-sm transition-colors rounded-md hover:bg-red-50"
                   >
                     {link.name}
                   </Link>
                 )
               )}
-            </div>
+            </nav>
 
-            {/* Desktop Only: Wishlist */}
-            <div className="hidden lg:block">
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600">
-                <Heart className="w-5 h-5" />
-              </Button>
-            </div>
+            {/* Wishlist (Desktop) */}
+            {/* <Link
+              to="/wishlist"
+              className="hidden lg:flex p-2 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+              aria-label="View wishlist"
+            >
+              <Heart className="w-5 h-5" />
+            </Link> */}
 
-            {/* Always visible: Cart */}
-            <div className="relative">
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600">
-                <ShoppingCart className="w-5 h-5" />
-              </Button>
+            {/* Cart */}
+            <Link
+              to="/cart"
+              className="hidden md:inline-flex lg:inline-flex relative p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              aria-label={`View cart (${cartCount} items)`}
+            >
+              <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs">
-                  {cartCount}
-                </Badge>
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-xs font-semibold">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
               )}
-            </div>
-
-            {/* Always visible: Login */}
-            <Link to="/login" className="ml-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-blue-200 text-blue-600 hover:bg-blue-50 bg-transparent"
-              >
-                <User className="w-4 h-4 mr-2" />
-                Login
-              </Button>
             </Link>
+
+            {/* Profile/Login */}
+            {loading ? (
+              <div className="w-20 h-9 bg-gray-100 rounded-md animate-pulse"></div>
+            ) : profile ? (
+              <div className="relative ml-2" ref={profileDropdownRef}>
+                <button
+                  className="flex items-center px-3 py-2 border border-gray-300 text-gray-700 hover:border-red-500 hover:text-red-600 rounded-md transition-colors bg-white"
+                  aria-haspopup="menu"
+                  aria-expanded={isProfileDropdownOpen}
+                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  <span className="max-w-[120px] truncate text-sm">
+                    {profile?.name || profile?.user?.name || "User"}
+                  </span>
+                  <ChevronDown className={`ml-2 w-4 h-4 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isProfileDropdownOpen && (
+                  <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-[10000]">
+                    <div className="py-1">
+                      <Link
+                        to={dashboardPath}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        to="/buyer-dashboard?tab=orders"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                      >
+                        My Orders
+                      </Link>
+                      <Link
+                        to="/buyer-dashboard?tab=wishlist"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                      >
+                        Wishlist
+                      </Link>
+                      <Link
+                        to="/buyer-dashboard?tab=profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                      >
+                        Profile Settings
+                      </Link>
+                      <div className="border-t border-gray-100">
+                        <button
+                          className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                          onClick={handleLogout}
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/login" className="ml-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-red-600 text-red-600 hover:bg-red-50"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
+        </div>
+      </div>
+
+      {/* Mobile Search Bar */}
+      <div className="lg:hidden border-t border-gray-100 bg-white/90 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <form onSubmit={handleSearch} className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+            <Input
+              type="text"
+              placeholder="Search for products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-20 py-2.5 w-full border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-white rounded-lg"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+            >
+              Search
+            </button>
+          </form>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="lg:hidden bg-white border-t border-gray-200 px-4 pb-6 w-full overflow-x-hidden">
-          <div className="flex flex-col space-y-3 mt-4">
-            {navLinks.map((link, index) =>
-              link.name === "Categories" ? (
-                <details key={index} className="group text-sm [&_summary::-webkit-details-marker]:hidden">
-                  <summary className="cursor-pointer text-gray-700 hover:text-blue-600 font-medium mb-1">
+        <div className="lg:hidden bg-white border-t border-gray-200 shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            {/* Navigation Links */}
+            <nav className="space-y-2">
+              {navLinks.map((link, index) =>
+                link.hasDropdown ? (
+                  <details key={index} className="group">
+                    <summary className="flex items-center justify-between cursor-pointer py-2 text-gray-700 hover:text-red-600 font-medium list-none">
+                      <span>{link.name}</span>
+                      <ChevronDown className="w-4 h-4 group-open:rotate-180 transition-transform" />
+                    </summary>
+                    <div className="pl-4 mt-2 space-y-1">
+                      {loadingCategories ? (
+                        <div className="text-sm text-gray-500 py-2">Loading...</div>
+                      ) : categories.length > 0 ? (
+                        categories.map((category, i) => (
+                          <Link
+                            key={category.id || i}
+                            to={getCategoryUrl(category)}
+                            onClick={() => setMobileOpen(false)}
+                            className="block py-2 text-gray-600 hover:text-red-600 text-sm"
+                          >
+                            {category.name}
+                          </Link>
+                        ))
+                      ) : (
+                        <div className="text-sm text-gray-500 py-2">No categories available</div>
+                      )}
+                      {/* <Link
+                        to="/categories"
+                        onClick={() => setMobileOpen(false)}
+                        className="block py-2 text-red-600 hover:text-red-700 text-sm font-medium"
+                      >
+                        View All Categories →
+                      </Link> */}
+                    </div>
+                  </details>
+                ) : (
+                  <Link
+                    key={index}
+                    to={link.path}
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2 text-gray-700 hover:text-red-600 font-medium"
+                  >
                     {link.name}
-                  </summary>
-                  <ul className="pl-4 mt-1 space-y-1 text-gray-600">
-                    {mockCategories.slice(0, 6).map((cat, i) => (
-                      <li key={i}>
-                        <Link
-                          to={`/categories/${encodeURIComponent(
-                            cat.name.toLowerCase().replace(/\s+/g, "-")
-                          )}`}
-                          onClick={() => setMobileOpen(false)}
-                          className="block hover:text-blue-600"
-                        >
-                          {cat.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              ) : (
+                  </Link>
+                )
+              )}
+            </nav>
+
+            {/* Mobile Actions */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between">
                 <Link
-                  key={index}
-                  to={link.path}
+                  to="/cart"
                   onClick={() => setMobileOpen(false)}
-                  className="text-gray-700 hover:text-blue-600 font-medium text-sm"
+                  className="flex items-center space-x-2 text-gray-700 hover:text-red-600"
+                  aria-label={`View cart (${cartCount} items)`}
                 >
-                  {link.name}
+                  <div className="relative">
+                    <ShoppingCart className="w-5 h-5" />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-red-600 text-white text-xs font-semibold">
+                        {cartCount > 99 ? '99+' : cartCount}
+                      </span>
+                    )}
+                  </div>
+                  <span>Cart</span>
                 </Link>
-              )
-            )}
-          </div>
 
-          {/* Mobile Search */}
-          <div className="mt-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="Search for products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border-gray-200 bg-white"
-              />
+                {/* <Link
+                  to="/wishlist"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center space-x-2 text-gray-700 hover:text-red-500"
+                >
+                  <Heart className="w-5 h-5" />
+                  <span>Wishlist</span>
+                </Link> */}
+              </div>
             </div>
-          </div>
-
-          {/* Mobile: Wishlist Only */}
-          <div className="mt-6">
-            <Link
-              to="/wishlist"
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center text-gray-700 hover:text-blue-600 space-x-2 text-sm"
-            >
-              <Heart className="w-4 h-4" />
-              <span>Wishlist</span>
-            </Link>
           </div>
         </div>
       )}
     </header>
   )
 }
- 

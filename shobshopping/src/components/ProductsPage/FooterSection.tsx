@@ -2,7 +2,6 @@
 import React from "react"
 import { Link } from "react-router-dom"
 import { Zap } from "lucide-react"
-
 export default function FooterSection() {
   return (
     <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">

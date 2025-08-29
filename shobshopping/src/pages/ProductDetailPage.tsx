@@ -177,7 +177,7 @@ export default function ProductDetailPage() {
             <div>
               {/* Title & Rating */}
               <div className="mb-4">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#cd2733] mb-2">
                   {product.name}
                 </h1>
                 <div className="flex items-center space-x-4 mb-4">
@@ -315,7 +315,7 @@ export default function ProductDetailPage() {
               <div className="space-y-4 mb-6">
                 <Button
                   size="lg"
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:opacity-90"
+                  className="w-full bg-gradient-to-r from-[#cd2733] to-purple-600 text-white hover:opacity-90"
                 >
                   <ShoppingCart className="w-5 h-5 mr-2" />
                   Add to Cart

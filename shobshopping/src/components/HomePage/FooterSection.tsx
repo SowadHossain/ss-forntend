@@ -1,65 +1,160 @@
 import React from "react"
-import { Link } from "react-router-dom"
-import { Zap } from "lucide-react"
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, MapIcon, Lock, Zap, Linkedin } from "lucide-react"
+import { API } from "../../lib/api"
 
 export default function FooterSection() {
+  function useCategories() {
+    const [categories, setCategories] = React.useState<any[]>([])
+
+    React.useEffect(() => {
+      API.getCategories().then(data => setCategories(data))
+    }, [])
+
+    return categories
+  }
+
   return (
-    <footer className="bg-gray-900 text-white px-4 sm:px-6 lg:px-8 pt-10 pb-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Top: Branding and Sections */}
-        <div className="flex flex-col md:flex-row md:justify-between gap-10">
-          {/* Logo & Description */}
-          <div className="flex flex-col gap-3 max-w-sm">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">ShobShopping ✨</span>
+    <footer className="bg-gradient-to-br from-red-50 via-white to-red-50 text-gray-700 border-t border-red-100">
+      {/* Main Footer Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Company Info */}
+          <div className="lg:col-span-1">
+            <div className="flex items-center space-x-2 mb-4">
+              <img src="/logo.png" alt="ShobShopping" className="h-10 w-10 rounded-lg" />
+              <img src="/text_ss.png" alt="ShobShopping" className="h-6 object-contain" />
             </div>
-            <p className="text-gray-400 text-sm">
-              Your ultimate destination for amazing products and unbeatable deals! 🛍️
+            <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+              Your trusted marketplace for quality products at unbeatable prices. 
+              Discover millions of items from verified sellers worldwide.
             </p>
-          </div>
-
-          {/* Sections */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-sm text-gray-400">
-            <div>
-              <h3 className="font-semibold text-white mb-2">Quick Links</h3>
-              <ul className="space-y-1">
-                <li><Link to="/products" className="hover:text-white">Products</Link></li>
-                <li><Link to="/sellers" className="hover:text-white">Sellers</Link></li>
-                <li><Link to="/deals" className="hover:text-white">Deals</Link></li>
-                <li><Link to="/support" className="hover:text-white">Support</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-white mb-2">Account</h3>
-              <ul className="space-y-1">
-                <li><Link to="/auth/login" className="hover:text-white">Login</Link></li>
-                <li><Link to="/auth/register" className="hover:text-white">Register</Link></li>
-                <li><Link to="/dashboard" className="hover:text-white">Dashboard</Link></li>
-                <li><Link to="/orders" className="hover:text-white">Orders</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-white mb-2">Connect</h3>
-              <ul className="space-y-1">
-                <li><a href="#" className="hover:text-white">Twitter 🐦</a></li>
-                <li><a href="#" className="hover:text-white">Instagram 📸</a></li>
-                <li><a href="#" className="hover:text-white">Facebook 👥</a></li>
-                <li><a href="#" className="hover:text-white">TikTok 🎵</a></li>
-              </ul>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center space-x-3">
+                <Phone className="h-4 w-4 text-red-500" />
+                <span className="text-gray-700">1-800-SHOB-SHOP</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Mail className="h-4 w-4 text-red-500" />
+                <span className="text-gray-700">support@shobshopping.com</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <MapPin className="h-4 w-4 text-red-500" />
+                <span className="text-gray-700">24/7 Customer Service</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Bottom: Copyright */}
-        <div className="border-t border-gray-800 pt-6 text-center text-xs text-gray-500">
-          &copy; 2025 ShobShopping. Made with 💜 for the next generation of shoppers!
+          {/* Shop Categories */}
+            <div>
+            <h3 className="font-semibold text-red-600 mb-4">Shop Categories</h3>
+            <ul className="space-y-2 text-sm">
+              {useCategories().map(category => (
+              <li key={category.id}>
+                <a
+                href={`/categories/${category.id}`}
+                className="text-gray-700 hover:text-red-600 transition-colors"
+                >
+                {category.name}
+                </a>
+              </li>
+              ))}
+            </ul>
+            </div>
+
+          {/* Customer Service */}
+          <div>
+            <h3 className="font-semibold text-red-600 mb-4">Customer Service</h3>
+            <ul className="space-y-2 text-sm">
+              <li><a href="/help" className="text-gray-700 hover:text-red-600 transition-colors">Help Center</a></li>
+              <li><a href="/returns" className="text-gray-700 hover:text-red-600 transition-colors">Returns & Refunds</a></li>
+              <li><a href="/shipping" className="text-gray-700 hover:text-red-600 transition-colors">Shipping Information</a></li>
+              <li><a href="/contact" className="text-gray-700 hover:text-red-600 transition-colors">Contact Us</a></li>
+            </ul>
+          </div>
+
+          {/* Account & Legal */}
+          <div>
+            <h3 className="font-semibold text-red-600 mb-4">My Account</h3>
+            <ul className="space-y-2 text-sm mb-6">
+              <li><a href="/login" className="text-gray-700 hover:text-red-600 transition-colors">Sign In</a></li>
+              <li><a href="/buyer-dashboard" className="text-gray-700 hover:text-red-600 transition-colors">Dashboard</a></li>
+              <li><a href="/account/wishlist" className="text-gray-700 hover:text-red-600 transition-colors">Wishlist</a></li>
+            </ul>
+            
+            <h4 className="font-semibold text-red-600 mb-3 text-sm">Legal</h4>
+            <ul className="space-y-2 text-xs">
+              <li><a href="/privacy" className="text-gray-600 hover:text-red-600 transition-colors">Privacy Policy</a></li>
+              <li><a href="/terms" className="text-gray-600 hover:text-red-600 transition-colors">Terms of Service</a></li>
+              <li><a href="/cookies" className="text-gray-600 hover:text-red-600 transition-colors">Cookie Policy</a></li>
+            </ul>
+          </div>
         </div>
       </div>
+
+      {/* Payment Methods & Social */}
+      <div className="border-t border-red-200 bg-red-25">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <span className="text-sm text-gray-600">Accepted Payment Methods:</span>
+              <div className="flex items-center space-x-3">
+                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
+                  <span className="text-xs font-bold text-blue-600">VISA</span>
+                </div>
+                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
+                  <span className="text-xs font-bold text-red-600">MC</span>
+                </div>
+                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
+                  <span className="text-xs font-bold text-blue-800">AMEX</span>
+                </div>
+                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
+                  <span className="text-xs font-bold text-yellow-600">PAYPAL</span>
+                </div>
+                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
+                  <span className="text-xs font-bold text-green-600">APPLE PAY</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Follow Us:</span>
+              <div className="flex space-x-3">
+                <a href="#" className="bg-white hover:bg-[#1877F3] hover:text-white p-2 rounded-lg shadow-sm border border-gray-200 transition-colors text-[#1877F3]">
+                  <Facebook className="h-4 w-4" />
+                </a>
+                <a href="#" className="bg-white hover:bg-gradient-to-tr from-[#fd5949] via-[#d6249f] to-[#285AEB] hover:text-white p-2 rounded-lg shadow-sm border border-gray-200 transition-colors text-[#d6249f]">
+                  <Instagram className="h-4 w-4" />
+                </a>
+                <a href="#" className="bg-white hover:bg-[#1DA1F2] hover:text-white p-2 rounded-lg shadow-sm border border-gray-200 transition-colors text-[#1DA1F2]">
+                  <Linkedin className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Copyright */}
+      {/* <div className="border-t border-red-200 bg-red-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+            <div>
+          &copy; 2025 ShobShopping, Inc. All rights reserved.
+            </div>
+            <div className="flex items-center space-x-6 mt-2 md:mt-0">
+          <span className="flex items-center gap-2 text-green-600 font-medium">
+            <MapIcon size={18} strokeWidth={2} /> Nationwide shipping
+          </span>
+          <span className="flex items-center gap-1 text-red-600">
+            <Zap size={16} /> Lightning-fast delivery
+          </span>
+          <span className="flex items-center gap-1 text-yellow-600">
+            <Lock size={16} /> 100% secure checkout
+          </span>
+            </div>
+          </div>
+        </div>
+      </div> */}
     </footer>
   )
 }

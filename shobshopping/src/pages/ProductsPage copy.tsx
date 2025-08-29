@@ -272,24 +272,24 @@ export default function ProductsPage() {
           <Button
             size="sm"
             variant="ghost"
-            className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/80 hover:bg-gray-100 text-gray-500 hover:text-pink-500"
+            className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/80 hover:bg-gray-100 text-gray-500 hover:text-[#cd2733]"
           >
             <Heart className="w-4 h-4" />
           </Button>
           {product.originalPrice && (
-            <Badge className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-pink-500 text-white border-0">
+            <Badge className="absolute top-2 left-2 bg-[#cd2733] text-white border-0">
               🔥 Sale
             </Badge>
           )}
           {product.freeShipping && (
-            <Badge className="absolute bottom-2 left-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0">
+            <Badge className="absolute bottom-2 left-2 bg-green-600 text-white border-0">
               🚚 Free Ship
             </Badge>
           )}
         </div>
 
         <Link to={`/products/${product.id}`} className="block">
-          <h3 className="font-semibold text-gray-800 mb-2 hover:text-blue-600 transition-colors line-clamp-2">
+          <h3 className="font-semibold text-gray-800 mb-2 hover:text-[#cd2733] transition-colors line-clamp-2">
             {product.name}
           </h3>
         </Link>
@@ -326,7 +326,7 @@ export default function ProductsPage() {
         <p className="text-sm text-gray-500 mb-3">by {product.seller}</p>
 
         <Button
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
+          className="w-full bg-[#cd2733] hover:bg-[#b71e28] text-white border-0"
           disabled={!product.inStock}
           size="sm"
         >
@@ -338,15 +338,20 @@ export default function ProductsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-green-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white backdrop-blur-xl border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            {/* Title */}
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-              🔥 Products
-            </h1>
+            {/* Title with logo */}
+            <div className="flex items-center gap-3">
+              <Link to="/">
+                <img src="/assets/logo.png" alt="Logo" className="h-8 w-8" />
+              </Link>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#cd2733]">
+                🔥 Products
+              </h1>
+            </div>
 
             {/* Controls */}
             <div className="flex flex-wrap items-center justify-start gap-3 sm:gap-4">
@@ -358,13 +363,13 @@ export default function ProductsPage() {
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-60 sm:w-64 bg-white border border-gray-200 text-gray-700 placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="pl-9 w-60 sm:w-64 bg-white border border-gray-200 text-gray-700 placeholder-gray-400 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#cd2733]"
                 />
               </div>
 
               {/* Sort Dropdown */}
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-44 bg-white border border-gray-200 text-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <SelectTrigger className="w-44 bg-white border border-gray-200 text-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#cd2733]">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-gray-200 text-gray-800 shadow-lg rounded-md">
@@ -383,7 +388,7 @@ export default function ProductsPage() {
                   onClick={() => setViewMode("grid")}
                   className={`rounded-md border text-sm px-2 ${
                     viewMode === "grid"
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                      ? "bg-[#cd2733] text-white"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100"
                   }`}
                   aria-label="Grid view"
@@ -395,7 +400,7 @@ export default function ProductsPage() {
                   onClick={() => setViewMode("list")}
                   className={`rounded-md border text-sm px-2 ${
                     viewMode === "list"
-                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                      ? "bg-[#cd2733] text-white"
                       : "bg-white border-gray-200 text-gray-600 hover:bg-gray-100"
                   }`}
                   aria-label="List view"
@@ -409,14 +414,14 @@ export default function ProductsPage() {
                 {/* Cart */}
                 <Link
                   to="/cart"
-                  className="relative text-gray-600 hover:text-blue-600 transition"
+                  className="relative text-gray-600 hover:text-[#cd2733] transition"
                   aria-label="View cart"
                 >
                   <ShoppingCart className="w-5 h-5" />
                   {/* Safe fallback for undefined cartItems */}
                   {Array.isArray((window as any).cartItems) &&
                     (window as any).cartItems.length > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
+                      <span className="absolute -top-2 -right-2 bg-[#cd2733] text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center">
                         {(window as any).cartItems.length}
                       </span>
                     )}
@@ -431,14 +436,14 @@ export default function ProductsPage() {
                   <div className="flex items-center gap-2">
                     <Link
                       to="/login"
-                      className="text-sm text-gray-600 hover:text-blue-600"
+                      className="text-sm text-gray-600 hover:text-[#cd2733]"
                     >
                       Login
                     </Link>
                     <Link to="/register">
                       <Button
                         size="sm"
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                        className="bg-[#cd2733] text-white"
                       >
                         Get Started
                       </Button>
@@ -527,7 +532,7 @@ export default function ProductsPage() {
                 >
                   Previous
                 </Button>
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                <Button className="bg-[#cd2733] text-white">
                   1
                 </Button>
                 <Button

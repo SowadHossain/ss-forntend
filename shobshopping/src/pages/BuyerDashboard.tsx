@@ -1,11 +1,42 @@
-import React from "react"
-
-import { useState } from "react"
-import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
-import { Badge } from "../components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import {
+  Bell,
+  CreditCard,
+  Download,
+  Edit,
+  Eye,
+  Filter,
+  Heart,
+  LogOut,
+  MessageSquare,
+  Package,
+  Plus,
+  ShoppingBag,
+  Star,
+  Trash2,
+  Truck,
+  Binary,
+  HeadphonesIcon,
+  Settings,
+  LayoutDashboard,
+  Check,
+  CheckSquare,
+  LockIcon,
+  Shield,
+  ShieldCheck,
+  CurrencyIcon,
+  Currency,
+  DollarSign,
+  Pencil,
+  Rocket,
+  User,
+  ChevronDown
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,212 +44,347 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../components/ui/dialog"
-import { Label } from "../components/ui/label"
-import { Textarea } from "../components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Switch } from "../components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
-import {
-  Package,
-  Heart,
-  Star,
-  Eye,
-  MessageSquare,
-  Bell,
-  CreditCard,
-  Truck,
-  ShoppingBag,
-  Filter,
-  Download,
-  Plus,
-  Edit,
-  Trash2,
-  Zap,
-} from "lucide-react"
-
-// Mock Data
-const mockOrders = [
-  {
-    id: "ORD-001",
-    date: "2024-01-15",
-    status: "delivered",
-    total: 299.99,
-    items: 2,
-    seller: "TechZone",
-    products: [
-      { name: "Gaming Mouse Pro", price: 79.99, image: "/placeholder.svg?height=60&width=60" },
-      { name: "Mechanical Keyboard", price: 220.0, image: "/placeholder.svg?height=60&width=60" },
-    ],
-    tracking: "TRK123456789",
-    estimatedDelivery: "2024-01-20",
-  },
-  {
-    id: "ORD-002",
-    date: "2024-01-12",
-    status: "shipped",
-    total: 89.99,
-    items: 1,
-    seller: "AudioMax",
-    products: [{ name: "Wireless Earbuds Elite", price: 89.99, image: "/placeholder.svg?height=60&width=60" }],
-    tracking: "TRK987654321",
-    estimatedDelivery: "2024-01-18",
-  },
-  {
-    id: "ORD-003",
-    date: "2024-01-10",
-    status: "processing",
-    total: 1299.99,
-    items: 1,
-    seller: "TechZone",
-    products: [{ name: "Gaming Laptop Pro Max", price: 1299.99, image: "/placeholder.svg?height=60&width=60" }],
-    tracking: "TRK456789123",
-    estimatedDelivery: "2024-01-25",
-  },
-]
-
-const mockWishlist = [
-  {
-    id: 1,
-    name: "4K Webcam Ultra HD 📹",
-    price: 149.99,
-    originalPrice: 199.99,
-    image: "/placeholder.svg?height=150&width=150",
-    rating: 4.7,
-    reviews: 67,
-    seller: "StreamGear",
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: "Smart Watch Series X 📱",
-    price: 299.99,
-    originalPrice: 399.99,
-    image: "/placeholder.svg?height=150&width=150",
-    rating: 4.9,
-    reviews: 89,
-    seller: "WearTech",
-    inStock: false,
-  },
-]
-
-const mockTickets = [
-  {
-    id: "TK-001",
-    subject: "Order not delivered",
-    status: "open",
-    priority: "high",
-    createdAt: "2024-01-15",
-    lastUpdate: "2024-01-15",
-    orderId: "ORD-001",
-  },
-  {
-    id: "TK-002",
-    subject: "Product quality issue",
-    status: "resolved",
-    priority: "medium",
-    createdAt: "2024-01-10",
-    lastUpdate: "2024-01-12",
-    orderId: "ORD-002",
-  },
-]
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Switch } from "../components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Textarea } from "../components/ui/textarea";
+import { API } from "../lib/api";
+import { Value } from "@radix-ui/react-select";
 
 export default function BuyerDashboard() {
-  const [selectedOrder, setSelectedOrder] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState("orders")
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("orders");
+  const allowedTabs = ["orders", "wishlist", "support", "profile", "settings"];
   const [profile, setProfile] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+1 234 567 8900",
-    address: "123 Main St, New York, NY 10001",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
     avatar: "/placeholder.svg?height=100&width=100",
-  })
+  });
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
+  const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
   const [notifications, setNotifications] = useState({
     orderUpdates: true,
     promotions: false,
     newsletter: true,
     sms: false,
-  })
+  });
   const [newTicket, setNewTicket] = useState({
     subject: "",
+    issueType: "other",
     orderId: "",
-    issueType: "",
+    priority: "low",
     description: "",
-    priority: "medium",
-  })
-  const [showTicketForm, setShowTicketForm] = useState(false)
+  });
+  const [showTicketForm, setShowTicketForm] = useState(false);
+
+  // States for real data
+  const [orders, setOrders] = useState<any[]>([]);
+  const [wishlist, setWishlist] = useState<any[]>([]);
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingWishlist, setLoadingWishlist] = useState(true);
+  const [loadingTickets, setLoadingTickets] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // New: dropdown menu state + ref (like SellerDashboard)
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const isAuthenticated =
+    !!sessionStorage.getItem("refreshtoken") || !!localStorage.getItem("accessToken")
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      // Not logged in — redirect to login page
+      navigate("/login")
+      return
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab && allowedTabs.includes(tab) && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  // Close menu on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowMenu(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  const handleTabChange = (value: string) => {
+    if (!allowedTabs.includes(value)) return;
+    setActiveTab(value);
+    const params = new URLSearchParams(location.search);
+    params.set("tab", value);
+    navigate(`${location.pathname}?${params.toString()}`, {replace: true});
+  };
+
+  // Logout handler (clear tokens and redirect)
+  function handleLogout() {
+    try {
+      sessionStorage.removeItem("accessToken");
+      localStorage.removeItem("accessToken");
+      sessionStorage.removeItem("refreshtoken");
+    } catch {}
+    setShowMenu(false);
+    navigate("/login");
+  }
+
+  // Fetch user profile
+  useEffect(() => {
+    let mounted = true;
+    const fetchProfile = async () => {
+      try {
+        const data = await API.getProfile();
+        if (!mounted) return;
+        const name =
+          data?.name ||
+          [data?.first_name, data?.last_name].filter(Boolean).join(" ") ||
+          data?.user?.name ||
+          data?.user?.full_name ||
+          data?.username ||
+          (data?.email ? String(data.email).split("@")[0] : "User");
+        const email = data?.email || data?.user?.email || "";
+        const phone = data?.phone || data?.user?.phone || "";
+        const address = data?.address || data?.user?.address || "";
+        const avatar = data?.avatar || data?.user?.avatar || "/placeholder.svg?height=100&width=100";
+        setProfile({ name, email, phone, address, avatar });
+      } catch {
+        // leave defaults
+      } finally {
+        if (mounted) setLoadingProfile(false);
+      }
+    };
+    fetchProfile();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Save profile handler
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setProfileSaveError(null);
+    setProfileSaveSuccess(false);
+    try {
+      await API.updateProfile({
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        address: profile.address,
+        avatar: profile.avatar,
+      });
+      setProfileSaveSuccess(true);
+      setTimeout(() => setProfileSaveSuccess(false), 2000);
+    } catch (err: any) {
+      setProfileSaveError(err?.message || "Failed to save profile");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Fetch orders, wishlist, and support tickets
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchOrders = async () => {
+      try {
+        setLoadingOrders(true);
+        const data = await API.getOrders();
+        if (!mounted) return;
+        setOrders(data);
+      } catch (e: any) {
+        setError(e.message || "Failed to load orders");
+      } finally {
+        if (mounted) setLoadingOrders(false);
+      }
+    };
+
+    const fetchWishlist = async () => {
+      try {
+        setLoadingWishlist(true);
+        const data = await API.getWishlist();
+        if (!mounted) return;
+        setWishlist(data);
+      } catch (e: any) {
+        setError(e.message || "Failed to load wishlist");
+      } finally {
+        if (mounted) setLoadingWishlist(false);
+      }
+    };
+
+    const fetchSupportTickets = async () => {
+      try {
+        setLoadingTickets(true);
+        const data = await API.getSupportTickets();
+        if (!mounted) return;
+        setSupportTickets(data);
+      } catch (e: any) {
+        setError(e.message || "Failed to load support tickets");
+      } finally {
+        if (mounted) setLoadingTickets(false);
+      }
+    };
+
+    fetchOrders();
+    fetchWishlist();
+    fetchSupportTickets();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Calculate total spent from orders
+  const totalSpent = orders.reduce((acc, order) => acc + (order.total || 0), 0);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "delivered":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-green-100 text-green-800 border-green-200";
       case "shipped":
-        return "bg-blue-100 text-blue-800 border-blue-200"
+        return "bg-[#cd2733]/10 text-[#cd2733] border-[#cd2733]/30";
       case "processing":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200"
+        return "bg-red-100 text-red-800 border-red-200";
       case "open":
-        return "bg-blue-100 text-blue-800 border-blue-200"
+        return "bg-blue-100 text-blue-800 border-blue-200";
       case "resolved":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-green-100 text-green-800 border-green-200";
       case "closed":
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  }
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
-        return "bg-red-100 text-red-800 border-red-200"
+        return "bg-red-100 text-red-800 border-red-200";
       case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "low":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-green-100 text-green-800 border-green-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  }
+  };
 
   const handleTicketSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("New ticket:", newTicket)
-    setShowTicketForm(false)
-    setNewTicket({ subject: "", orderId: "", issueType: "", description: "", priority: "medium" })
-  }
+    e.preventDefault();
+    setLoadingTickets(true);
+    const payload: any = {
+      subject: newTicket.subject,
+      type: newTicket.issueType || "other",
+      description: newTicket.description,
+      priority: newTicket.priority,
+    };
+    if (newTicket.orderId) payload.order = Number(newTicket.orderId);
+
+    API.createSupportTicket(payload)
+      .then(() => API.getSupportTickets())
+      .then((data) => {
+        setSupportTickets(data);
+        setShowTicketForm(false);
+        setNewTicket({ subject: "", issueType: "other", orderId: "", priority: "low", description: "" });
+      })
+      .catch((e: any) => {
+        setError(e.message || "Failed to create support ticket");
+      })
+      .finally(() => {
+        setLoadingTickets(false);
+      });
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white/90 backdrop-blur-md border-b border-red-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  My Dashboard 🛍️
-                </span>
+              <div className="flex items-center space-x-2 hover:cursor-pointer" onClick={() => (window.location.href = "/")}>
+                <img src="https://shobshopping.com/logo.png" alt="Logo" className="w-8 h-8" />
+                <img src="https://shobshopping.com/text_ss.png" alt="Text Logo" className="h-5" />
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm" className="text-gray-600 hover:text-blue-600">
+              {/* <Button variant="ghost" size="sm" className="text-gray-600 hover:text-red-600">
                 <Bell className="w-5 h-5" />
                 <Badge className="ml-1 bg-red-500 text-white">2</Badge>
-              </Button>
-              <Avatar>
-                <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.name} />
-                <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                  {profile.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
+              </Button> */}
+
+              {/* Replaced simple anchor avatar with dropdown menu (like SellerDashboard) */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  className="flex items-center space-x-2 focus:outline-none bg-white/80 border border-red-100 rounded-lg px-3 py-2 shadow"
+                  aria-haspopup="true"
+                  aria-expanded={showMenu}
+                  onClick={() => setShowMenu((prev) => !prev)}
+                  type="button"
+                  title="Account menu"
+                >
+                  <Avatar style={{ cursor: "pointer" }} className="w-8 h-8">
+                    <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.name} />
+                    <AvatarFallback className="bg-gradient-to-r from-red-500 to-rose-600 text-white">
+                      {profile.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden sm:inline text-gray-700 font-medium">{profile.name.split(" ")[0]}</span>
+                  <ChevronDown className={`ml-2 w-4 h-4 transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showMenu && typeof window !== "undefined" && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-red-100 rounded-lg shadow-lg z-50">
+                    <div className="py-2">
+                      <button
+                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-red-50 flex items-center"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="w-4 h-4 mr-2 text-red-600" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -227,32 +393,34 @@ export default function BuyerDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome back, {profile.name}! 👋</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            Welcome back, {loadingProfile ? "..." : profile.name || "User"}!
+          </h1>
           <p className="text-gray-600">Manage your orders, wishlist, and account settings</p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="border-gray-200 bg-white">
+          <Card className="border-red-100 bg-white shadow-sm rounded-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Orders 📦</p>
-                  <p className="text-2xl font-bold text-gray-900">{mockOrders.length}</p>
+                  <p className="text-sm font-medium text-gray-600">Total Orders <Package className="inline-block w-4 h-4 ml-2" /></p>
+                  <p className="text-2xl font-bold text-gray-900">{loadingOrders ? "..." : orders.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-rose-500 rounded-full flex items-center justify-center">
                   <Package className="w-6 h-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 bg-white">
+          <Card className="border-red-100 bg-white shadow-sm rounded-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Wishlist Items 💝</p>
-                  <p className="text-2xl font-bold text-gray-900">{mockWishlist.length}</p>
+                  <p className="text-sm font-medium text-gray-600">Wishlist Items <Heart className="inline-block w-4 h-4 ml-2" /></p>
+                  <p className="text-2xl font-bold text-gray-900">{loadingWishlist ? "..." : wishlist.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-pink-400 to-red-500 rounded-full flex items-center justify-center">
                   <Heart className="w-6 h-6 text-white" />
@@ -261,12 +429,12 @@ export default function BuyerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 bg-white">
+          <Card className="border-red-100 bg-white shadow-sm rounded-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Support Tickets 🎧</p>
-                  <p className="text-2xl font-bold text-gray-900">{mockTickets.length}</p>
+                  <p className="text-sm font-medium text-gray-600">Support Tickets <HeadphonesIcon className="inline-block w-4 h-4 ml-2" /></p>
+                  <p className="text-2xl font-bold text-gray-900">{loadingTickets ? "..." : supportTickets.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-green-400 to-teal-500 rounded-full flex items-center justify-center">
                   <MessageSquare className="w-6 h-6 text-white" />
@@ -275,12 +443,12 @@ export default function BuyerDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 bg-white">
+          <Card className="border-red-100 bg-white shadow-sm rounded-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Spent 💰</p>
-                  <p className="text-2xl font-bold text-gray-900">$1,689</p>
+                  <p className="text-sm font-medium text-gray-600">Total Spent <DollarSign className="inline-block w-4 h-4 ml-2" /></p>
+                  <p className="text-2xl font-bold text-gray-900">BDT {totalSpent.toFixed(2)}</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-yellow-500 rounded-full flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-white" />
@@ -290,30 +458,31 @@ export default function BuyerDashboard() {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-white border border-gray-200">
-            <TabsTrigger value="orders" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              📦 My Orders
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+          {/* Tabs triggers */}
+          <TabsList className="grid w-full grid-cols-5 bg-white border border-red-100 rounded-lg overflow-hidden">
+            <TabsTrigger value="orders" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
+              <Package className="w-4 h-4 mr-2" /> My Orders
             </TabsTrigger>
-            <TabsTrigger value="wishlist" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              💝 Wishlist
+            <TabsTrigger value="wishlist" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
+              <Heart className="w-4 h-4 mr-2" /> Wishlist
             </TabsTrigger>
-            <TabsTrigger value="support" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              🎧 Support
+            <TabsTrigger value="support" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
+              <HeadphonesIcon className="w-4 h-4 mr-2" /> Support
             </TabsTrigger>
-            <TabsTrigger value="profile" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              👤 Profile
+            <TabsTrigger value="profile" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
+              <LayoutDashboard className="w-4 h-4 mr-2" /> Profile
             </TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              ⚙️ Settings
+            <TabsTrigger value="settings" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-600">
+              <Settings className="w-4 h-4 mr-2" /> Settings
             </TabsTrigger>
           </TabsList>
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800">My Orders 📦</h2>
-              <div className="flex items-center space-x-2">
+              <h2 className="text-2xl font-bold text-gray-800">My Orders <Package className="inline-block w-6 h-6 ml-2" /></h2>
+              {/* <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -330,227 +499,240 @@ export default function BuyerDashboard() {
                   <Download className="w-4 h-4 mr-2" />
                   Export
                 </Button>
-              </div>
+              </div> */}
             </div>
 
             <div className="space-y-4">
-              {mockOrders.map((order) => (
-                <Card key={order.id} className="border-gray-200 bg-white hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <p className="font-semibold text-gray-800">Order {order.id}</p>
-                          <p className="text-sm text-gray-500">Placed on {order.date}</p>
+              {loadingOrders && <p>Loading orders...</p>}
+              {!loadingOrders && orders.length === 0 && <p>No orders found.</p>}
+              {!loadingOrders &&
+                orders.map((order) => (
+                  <Card
+                    key={order.id}
+                    className="border-gray-200 bg-white hover:shadow-md transition-shadow"
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <p className="font-semibold text-gray-800">Order {order.id}</p>
+                            <p className="text-sm text-gray-500">Placed on {order.date}</p>
+                          </div>
+                          <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
                         </div>
-                        <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+                        <div className="text-right">
+                          <p className="font-bold text-gray-800">BDT {order.total}</p>
+                          <p className="text-sm text-gray-500">{order.items} item(s)</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-gray-800">${order.total}</p>
-                        <p className="text-sm text-gray-500">{order.items} item(s)</p>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex -space-x-2">
-                          {order.products.slice(0, 3).map((product, index) => (
-                            <img
-                              key={index}
-                              src={product.image || "/placeholder.svg"}
-                              alt={product.name}
-                              className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                            />
-                          ))}
-                          {order.products.length > 3 && (
-                            <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
-                              +{order.products.length - 3}
-                            </div>
-                          )}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex -space-x-2">
+                            {order.products?.slice(0, 3).map((product: any, index: number) => (
+                              <img
+                                key={index}
+                                src={product.image || "/placeholder.svg"}
+                                alt={product.name}
+                                className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                              />
+                            ))}
+                            {order.products && order.products.length > 3 && (
+                              <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+                                +{order.products.length - 3}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Sold by {order.seller}</p>
+                            {order.status === "shipped" && (
+                              <p className="text-sm text-blue-600">Tracking: {order.tracking}</p>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Sold by {order.seller}</p>
-                          {order.status === "shipped" && (
-                            <p className="text-sm text-blue-600">Tracking: {order.tracking}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
+                        <div className="flex items-center space-x-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedOrder(order)}
+                                className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl bg-white">
+                              <DialogHeader>
+                                <DialogTitle className="text-gray-800">
+                                  Order Details: {selectedOrder?.id}
+                                </DialogTitle>
+                                <DialogDescription className="text-gray-600">
+                                  Complete information about your order
+                                </DialogDescription>
+                              </DialogHeader>
+                              {selectedOrder && (
+                                <div className="space-y-6">
+                                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div>
+                                      <p className="font-semibold text-gray-800">Order Status</p>
+                                      <Badge className={getStatusColor(selectedOrder.status)}>
+                                        {selectedOrder.status}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-sm text-gray-600">Total Amount</p>
+                                      <p className="text-xl font-bold text-gray-800">${selectedOrder.total}</p>
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="font-semibold text-gray-800 mb-3">Order Items</h4>
+                                    <div className="space-y-3">
+                                      {selectedOrder.products.map((product: any, index: number) => (
+                                        <div
+                                          key={index}
+                                          className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                                        >
+                                          <img
+                                            src={product.image || "/placeholder.svg"}
+                                            alt={product.name}
+                                            className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                                          />
+                                          <div className="flex-1">
+                                            <p className="font-medium text-gray-800">{product.name}</p>
+                                            <p className="text-sm text-gray-600">Sold by {selectedOrder.seller}</p>
+                                          </div>
+                                          <p className="font-bold text-gray-800">${product.price}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {selectedOrder.status === "shipped" && (
+                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                      <div className="flex items-center space-x-2 mb-2">
+                                        <Truck className="w-5 h-5 text-blue-600" />
+                                        <p className="font-semibold text-blue-800">Shipping Information</p>
+                                      </div>
+                                      <p className="text-sm text-blue-700">
+                                        Tracking Number: {selectedOrder.tracking}
+                                      </p>
+                                      <p className="text-sm text-blue-700">
+                                        Estimated Delivery: {selectedOrder.estimatedDelivery}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </DialogContent>
+                          </Dialog>
+                          {order.status === "delivered" && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setSelectedOrder(order)}
-                              className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                              className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
                             >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
+                              <Star className="w-4 h-4 mr-2" />
+                              Review
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl bg-white">
-                            <DialogHeader>
-                              <DialogTitle className="text-gray-800">Order Details: {selectedOrder?.id}</DialogTitle>
-                              <DialogDescription className="text-gray-600">
-                                Complete information about your order
-                              </DialogDescription>
-                            </DialogHeader>
-                            {selectedOrder && (
-                              <div className="space-y-6">
-                                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                  <div>
-                                    <p className="font-semibold text-gray-800">Order Status</p>
-                                    <Badge className={getStatusColor(selectedOrder.status)}>
-                                      {selectedOrder.status}
-                                    </Badge>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-sm text-gray-600">Total Amount</p>
-                                    <p className="text-xl font-bold text-gray-800">${selectedOrder.total}</p>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-semibold text-gray-800 mb-3">Order Items</h4>
-                                  <div className="space-y-3">
-                                    {selectedOrder.products.map((product: any, index: number) => (
-                                      <div
-                                        key={index}
-                                        className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg border border-gray-200"
-                                      >
-                                        <img
-                                          src={product.image || "/placeholder.svg"}
-                                          alt={product.name}
-                                          className="w-16 h-16 rounded-lg object-cover border border-gray-200"
-                                        />
-                                        <div className="flex-1">
-                                          <p className="font-medium text-gray-800">{product.name}</p>
-                                          <p className="text-sm text-gray-600">Sold by {selectedOrder.seller}</p>
-                                        </div>
-                                        <p className="font-bold text-gray-800">${product.price}</p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                {selectedOrder.status === "shipped" && (
-                                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                    <div className="flex items-center space-x-2 mb-2">
-                                      <Truck className="w-5 h-5 text-blue-600" />
-                                      <p className="font-semibold text-blue-800">Shipping Information</p>
-                                    </div>
-                                    <p className="text-sm text-blue-700">Tracking Number: {selectedOrder.tracking}</p>
-                                    <p className="text-sm text-blue-700">
-                                      Estimated Delivery: {selectedOrder.estimatedDelivery}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        {order.status === "delivered" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
-                          >
-                            <Star className="w-4 h-4 mr-2" />
-                            Review
-                          </Button>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           </TabsContent>
 
           {/* Wishlist Tab */}
           <TabsContent value="wishlist" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800">My Wishlist 💝</h2>
-              <p className="text-gray-600">{mockWishlist.length} items saved</p>
+              <h2 className="text-2xl font-bold text-gray-800">My Wishlist <Heart className="inline-block w-6 h-6 text-gray-500" /></h2>
+              <p className="text-gray-600">{loadingWishlist ? "..." : wishlist.length} items saved</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockWishlist.map((item) => (
-                <Card key={item.id} className="border-gray-200 bg-white hover:shadow-lg transition-shadow">
-                  <CardContent className="p-0">
-                    <div className="relative">
-                      <img
-                        src={item.image || "/placeholder.svg"}
-                        alt={item.name}
-                        className="w-full h-48 object-cover rounded-t-lg"
-                      />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-500 hover:text-red-600"
-                      >
-                        <Heart className="w-4 h-4 fill-current" />
-                      </Button>
-                      {!item.inStock && (
-                        <div className="absolute inset-0 bg-black/50 rounded-t-lg flex items-center justify-center">
-                          <Badge className="bg-red-500 text-white">Out of Stock</Badge>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{item.name}</h3>
-                      <div className="flex items-center mb-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(item.rating) ? "text-yellow-400 fill-current" : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-500 ml-2">({item.reviews})</span>
-                      </div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <span className="text-lg font-bold text-gray-800">${item.price}</span>
-                          <span className="text-sm text-gray-500 line-through ml-2">${item.originalPrice}</span>
-                        </div>
-                        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
-                          {item.seller}
-                        </Badge>
-                      </div>
-                      <div className="flex space-x-2">
+              {loadingWishlist && <p>Loading wishlist...</p>}
+              {!loadingWishlist && wishlist.length === 0 && <p>No wishlist items found.</p>}
+              {!loadingWishlist &&
+                wishlist.map((item) => (
+                  <Card key={item.id} className="border-gray-200 bg-white hover:shadow-lg transition-shadow">
+                    <CardContent className="p-0">
+                      <div className="relative">
+                        <img
+                          src={item.image || "/placeholder.svg"}
+                          alt={item.name}
+                          className="w-full h-48 object-cover rounded-t-lg"
+                        />
                         <Button
-                          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-                          disabled={!item.inStock}
-                        >
-                          <ShoppingBag className="w-4 h-4 mr-2" />
-                          {item.inStock ? "Add to Cart" : "Notify Me"}
-                        </Button>
-                        <Button
-                          variant="outline"
                           size="sm"
-                          className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
+                          variant="ghost"
+                          className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-500 hover:text-red-600"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Heart className="w-4 h-4 fill-current" />
                         </Button>
+                        {!item.inStock && (
+                          <div className="absolute inset-0 bg-black/50 rounded-t-lg flex items-center justify-center">
+                            <Badge className="bg-red-500 text-white">Out of Stock</Badge>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="p-4">
+                        <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{item.name}</h3>
+                        <div className="flex items-center mb-2">
+                          <div className="flex items-center">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-4 h-4 ${
+                                  i < Math.floor(item.rating) ? "text-yellow-400 fill-current" : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-500 ml-2">({item.reviews})</span>
+                        </div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <span className="text-lg font-bold text-gray-800">${item.price}</span>
+                            <span className="text-sm text-gray-500 line-through ml-2">${item.originalPrice}</span>
+                          </div>
+                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+                            {item.seller}
+                          </Badge>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                            disabled={!item.inStock}
+                          >
+                            <ShoppingBag className="w-4 h-4 mr-2" />
+                            {item.inStock ? "Add to Cart" : "Notify Me"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           </TabsContent>
 
           {/* Support Tab */}
           <TabsContent value="support" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800">Support Center 🎧</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Support Center <HeadphonesIcon className="inline-block w-6 h-6 ml-2" /></h2>
               <Button
                 onClick={() => setShowTicketForm(true)}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Ticket
@@ -560,7 +742,7 @@ export default function BuyerDashboard() {
             {showTicketForm && (
               <Card className="border-gray-200 bg-white">
                 <CardHeader>
-                  <CardTitle className="text-gray-800">Submit Support Ticket 📝</CardTitle>
+                  <CardTitle className="text-gray-800">Submit Support Ticket <Pencil className="inline-block w-4 h-4 ml-2" /></CardTitle>
                   <CardDescription className="text-gray-600">
                     Describe your issue and we'll help you resolve it quickly
                   </CardDescription>
@@ -574,7 +756,7 @@ export default function BuyerDashboard() {
                           value={newTicket.subject}
                           onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
                           placeholder="Brief description of your issue"
-                          className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                          className="bg-white border-gray-200 focus:border-red-500 focus:ring-red-500"
                           required
                         />
                       </div>
@@ -588,8 +770,8 @@ export default function BuyerDashboard() {
                             <SelectValue placeholder="Select an order" />
                           </SelectTrigger>
                           <SelectContent className="bg-white">
-                            {mockOrders.map((order) => (
-                              <SelectItem key={order.id} value={order.id}>
+                            {orders.map((order) => (
+                              <SelectItem key={order.id} value={String(order.id)}>
                                 {order.id} - ${order.total}
                               </SelectItem>
                             ))}
@@ -641,22 +823,22 @@ export default function BuyerDashboard() {
                         value={newTicket.description}
                         onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
                         placeholder="Please provide detailed information about your issue..."
-                        className="min-h-[120px] bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                        className="min-h-[120px] bg-white border-gray-200 focus:border-red-500 focus:ring-red-500"
                         required
                       />
                     </div>
                     <div className="flex space-x-3">
                       <Button
                         type="submit"
-                        className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                        className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white"
                       >
-                        Submit Ticket 🚀
+                        Submit Ticket <Rocket className="inline-block w-4 h-4" />
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setShowTicketForm(false)}
-                        className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                        className="border-red-100 text-gray-700 hover:bg-red-50"
                       >
                         Cancel
                       </Button>
@@ -668,51 +850,54 @@ export default function BuyerDashboard() {
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">My Support Tickets</h3>
-              {mockTickets.map((ticket) => (
-                <Card key={ticket.id} className="border-gray-200 bg-white">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <p className="font-semibold text-gray-800">{ticket.subject}</p>
-                          <p className="text-sm text-gray-500">
-                            Ticket {ticket.id} • Created {ticket.createdAt}
-                          </p>
+              {loadingTickets && <p>Loading support tickets...</p>}
+              {!loadingTickets && supportTickets.length === 0 && <p>No support tickets found.</p>}
+              {!loadingTickets &&
+                supportTickets.map((ticket) => (
+                  <Card key={ticket.id} className="border-gray-200 bg-white">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <p className="font-semibold text-gray-800">{ticket.subject}</p>
+                            <p className="text-sm text-gray-500">
+                              Ticket {ticket.id} • Created {ticket.createdAt}
+                            </p>
+                          </div>
+                          <Badge className={getStatusColor(ticket.status)}>{ticket.status}</Badge>
+                          <Badge className={getPriorityColor(ticket.priority)}>{ticket.priority} priority</Badge>
                         </div>
-                        <Badge className={getStatusColor(ticket.status)}>{ticket.status}</Badge>
-                        <Badge className={getPriorityColor(ticket.priority)}>{ticket.priority} priority</Badge>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
+                          >
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            View Details
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
-                        >
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                    {ticket.orderId && (
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Package className="w-4 h-4" />
-                        <span>Related to order: {ticket.orderId}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      {ticket.orderId && (
+                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                          <Package className="w-4 h-4" />
+                          <span>Related to order: {ticket.orderId}</span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           </TabsContent>
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800">My Profile 👤</h2>
-              <Button variant="outline" className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent">
+              <h2 className="text-2xl font-bold text-gray-800">My Profile <User className="inline-block w-6 h-6 ml-2" /></h2>
+              {/* <Button variant="outline" className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Profile
-              </Button>
+              </Button> */}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -728,12 +913,8 @@ export default function BuyerDashboard() {
                     </AvatarFallback>
                   </Avatar>
                   <h3 className="text-xl font-semibold text-gray-800 mb-2">{profile.name}</h3>
-                  <p className="text-gray-600 mb-4">Valued Customer 🌟</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
-                  >
+                  <p className="text-gray-600 mb-4">Valued Customer <Heart className="inline-block w-4 h-4 text-red-500" /></p>
+                  <Button variant="outline" size="sm" className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent">
                     Change Photo
                   </Button>
                 </CardContent>
@@ -747,44 +928,58 @@ export default function BuyerDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <form onSubmit={handleSaveProfile} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-gray-700">Full Name</Label>
+                        <Input
+                          value={profile.name}
+                          onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                          className="bg-white border-gray-200 focus:border-red-500 focus:ring-red-500"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-gray-700">Email Address</Label>
+                        <Input
+                          type="email"
+                          value={profile.email}
+                          onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                          className="bg-white border-gray-200 focus:border-red-500 focus:ring-red-500"
+                        />
+                      </div>
+                    </div>
                     <div>
-                      <Label className="text-gray-700">Full Name</Label>
+                      <Label className="text-gray-700">Phone Number</Label>
                       <Input
-                        value={profile.name}
-                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                        className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                        value={profile.phone}
+                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        className="bg-white border-gray-200 focus:border-red-500 focus:ring-red-500"
                       />
                     </div>
                     <div>
-                      <Label className="text-gray-700">Email Address</Label>
-                      <Input
-                        type="email"
-                        value={profile.email}
-                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                        className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                      <Label className="text-gray-700">Address</Label>
+                      <Textarea
+                        value={profile.address}
+                        onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                        className="bg-white border-gray-200 focus:border-red-500 focus:ring-red-500"
                       />
                     </div>
-                  </div>
-                  <div>
-                    <Label className="text-gray-700">Phone Number</Label>
-                    <Input
-                      value={profile.phone}
-                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                      className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-gray-700">Address</Label>
-                    <Textarea
-                      value={profile.address}
-                      onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-                      className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                    />
-                  </div>
-                  <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">
-                    Save Changes ✅
-                  </Button>
+                    <div>
+                      <Button
+                        type="submit"
+                        className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white"
+                        disabled={savingProfile}
+                      >
+                        {savingProfile ? "Saving..." : <span>Save Changes <CheckSquare className="inline-block w-4 h-4 text-green-200" /></span>}
+                      </Button>
+                    </div>
+                    {profileSaveError && (
+                      <p className="text-red-600 text-sm">{profileSaveError}</p>
+                    )}
+                    {profileSaveSuccess && (
+                      <p className="text-green-600 text-sm">Profile updated successfully!</p>
+                    )}
+                  </form>
                 </CardContent>
               </Card>
             </div>
@@ -793,13 +988,13 @@ export default function BuyerDashboard() {
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800">Account Settings ⚙️</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Account Settings <Settings className="inline-block w-6 h-6 text-gray-500" /></h2>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="border-gray-200 bg-white">
                 <CardHeader>
-                  <CardTitle className="text-gray-800">Notification Preferences 🔔</CardTitle>
+                  <CardTitle className="text-gray-800">Notification Preferences <Bell className="inline-block w-6 h-6 text-gray-500" /></CardTitle>
                   <CardDescription className="text-gray-600">Choose how you want to receive updates</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -815,7 +1010,7 @@ export default function BuyerDashboard() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-gray-700">Promotions & Deals</Label>
+                      <Label className="text-gray-700">Promotions &amp; Deals</Label>
                       <p className="text-sm text-gray-500">Receive special offers and discounts</p>
                     </div>
                     <Switch
@@ -848,7 +1043,7 @@ export default function BuyerDashboard() {
 
               <Card className="border-gray-200 bg-white">
                 <CardHeader>
-                  <CardTitle className="text-gray-800">Security Settings 🔒</CardTitle>
+                  <CardTitle className="text-gray-800">Security Settings <LockIcon className="inline-block w-6 h-6 text-gray-500" /></CardTitle>
                   <CardDescription className="text-gray-600">Manage your account security</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -857,7 +1052,7 @@ export default function BuyerDashboard() {
                     <Input
                       type="password"
                       placeholder="Enter current password"
-                      className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                      className="bg-white border-gray-200 focus:border-red-500 focus:ring-red-500"
                     />
                   </div>
                   <div>
@@ -865,7 +1060,7 @@ export default function BuyerDashboard() {
                     <Input
                       type="password"
                       placeholder="Enter new password"
-                      className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                      className="bg-white border-gray-200 focus:border-red-500 focus:ring-red-500"
                     />
                   </div>
                   <div>
@@ -873,17 +1068,17 @@ export default function BuyerDashboard() {
                     <Input
                       type="password"
                       placeholder="Confirm new password"
-                      className="bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                      className="bg-white border-gray-200 focus:border-red-500 focus:ring-red-500"
                     />
                   </div>
-                  <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">
-                    Update Password 🔐
+                  <Button className="w-full bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white">
+                    Update Password <CheckSquare className="inline-block w-4 h-4 text-white" />
                   </Button>
                   <Button
                     variant="outline"
                     className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
                   >
-                    Enable Two-Factor Authentication 🛡️
+                    Enable Two-Factor Authentication <ShieldCheck className="inline-block w-4 h-4" />
                   </Button>
                 </CardContent>
               </Card>
@@ -892,5 +1087,5 @@ export default function BuyerDashboard() {
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

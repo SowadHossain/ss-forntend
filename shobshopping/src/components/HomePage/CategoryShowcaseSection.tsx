@@ -34,9 +34,9 @@ export default function CategoryShowcaseSection({ title, products, link }: Categ
           )}
         </div>
 
-        <div className="flex space-x-4 overflow-x-auto scrollbar-hide">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
           {products.map((product) => (
-            <div key={product.id} className="min-w-[240px] max-w-[240px] flex-shrink-0">
+            <div key={product.id}>
               <ProductCard product={product} />
             </div>
           ))}
