@@ -52,3 +52,47 @@ class ProductSerializer(serializers.ModelSerializer):
             'seller',
             'created_at',
         ]
+
+
+    def create(self, validated_data):
+        import base64
+        import uuid
+        from django.core.files.base import ContentFile
+        import logging
+        request = self.context.get('request')
+        base64_image = request.data.get('image_base64')
+        if base64_image:
+            if ',' in base64_image:
+                base64_image = base64_image.split(',')[1]
+            try:
+                decoded_img = base64.b64decode(base64_image)
+                filename = f"{uuid.uuid4().hex}.png"
+                # No need to manually create directory
+                validated_data['image'] = ContentFile(decoded_img, name=filename)
+            except Exception as e:
+                logging.error(f"Image upload error: {e}")
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        import base64
+        import uuid
+        from django.core.files.base import ContentFile
+        import os
+        import logging
+        request = self.context.get('request')
+        base64_image = request.data.get('image_base64')
+        if base64_image:
+            if ',' in base64_image:
+                base64_image = base64_image.split(',')[1]
+            try:
+                decoded_img = base64.b64decode(base64_image)
+                filename = f"{uuid.uuid4().hex}.png"
+                products_dir = os.path.join('media', 'products')
+                abs_products_dir = os.path.join(os.path.dirname(__file__), '../media/products')
+                abs_products_dir = os.path.abspath(abs_products_dir)
+                if not os.path.exists(abs_products_dir):
+                    os.makedirs(abs_products_dir)
+                instance.image = ContentFile(decoded_img, name=filename)
+            except Exception as e:
+                logging.error(f"Image upload error: {e}")
+        return super().update(instance, validated_data)

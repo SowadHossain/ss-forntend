@@ -43,7 +43,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['name']
 
     def __str__(self):
-        return self.email
+        return self.name
 
 
 class SellerProfile(models.Model):

@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'qna',
     'coupons',
     'analytics',
-    # 'onboarding',
+    'onboarding',
 ]
 
 MIDDLEWARE = [
@@ -56,7 +56,8 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # 'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,6 +124,8 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
     ],
+    'DATA_UPLOAD_MAX_MEMORY_SIZE': 104857600,  # 100 MB
+    'FILE_UPLOAD_MAX_MEMORY_SIZE': 104857600,  # 100 MB
 }
 
 # JWT settings

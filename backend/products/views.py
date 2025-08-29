@@ -1,4 +1,23 @@
 from rest_framework import viewsets, permissions, filters
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
+
+from .models import Product, Category, Tag
+from .serializers import ProductSerializer, CategorySerializer, TagSerializer
+from accounts.permissions import IsSeller, IsAdmin
+
+
+class PublicApprovedProductsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        products = Product.objects.filter(moderation_status='APPROVED', status='ACTIVE').order_by('-created_at')
+        serializer = ProductSerializer(products, many=True, context={'request': request})
+        return Response(serializer.data)
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 
@@ -23,24 +42,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'description']
 
     def get_queryset(self):
-        user = self.request.user
-
-        if not user.is_authenticated:
-            return Product.objects.filter(
-                moderation_status='APPROVED',
-                status='ACTIVE'
-            ).order_by('-created_at')
-
-        if user.role == 'ADMIN':
-            return Product.objects.all().order_by('-created_at')
-
-        if user.role == 'SELLER':
-            return Product.objects.filter(seller=user).order_by('-created_at')
-
-        return Product.objects.filter(
-            moderation_status='APPROVED',
-            status='ACTIVE'
-        ).order_by('-created_at')
+        return Product.objects.filter(moderation_status='APPROVED', status='ACTIVE').order_by('-created_at')
 
     def perform_create(self, serializer):
         serializer.save(seller=self.request.user, moderation_status='IN_REVIEW')
@@ -67,10 +69,10 @@ class ProductViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [permissions.AllowAny]
 
 
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [permissions.AllowAny]

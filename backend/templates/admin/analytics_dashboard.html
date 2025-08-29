@@ -1,0 +1,143 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block title %}Analytics Dashboard | ShobShopping{% endblock %}
+
+{% block content %}
+<style>
+    .dashboard-cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        flex: 1;
+        min-width: 220px;
+        padding: 20px;
+        border-radius: 8px;
+        color: #fff;
+    }
+
+    .card h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+    }
+
+    .card p {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    .card.orders { background: #2c3e50; }
+    .card.revenue { background: #27ae60; }
+    .card.buyers { background: #2980b9; }
+    .card.sellers { background: #8e44ad; }
+
+    table.adminlist {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    table.adminlist th,
+    table.adminlist td {
+        padding: 10px;
+        border: 1px solid var(--border-color, #333);
+    }
+
+    table.adminlist th {
+        background-color: var(--header-bg, #444);
+        color: var(--header-color, #fff);
+    }
+
+    table.adminlist tr:nth-child(even) {
+        background-color: var(--row-alt-bg, #222);
+    }
+
+    table.adminlist td {
+        color: var(--text-color, #ddd);
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-cards {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<h1>📊 Analytics Dashboard</h1>
+
+<div class="dashboard-cards">
+    <div class="card orders">
+        <h3>Total Orders</h3>
+        <p>{{ total_orders }}</p>
+    </div>
+    <div class="card revenue">
+        <h3>Total Revenue</h3>
+        <p>৳{{ total_revenue }}</p>
+    </div>
+    <div class="card buyers">
+        <h3>Buyers</h3>
+        <p>{{ buyers_count }}</p>
+    </div>
+    <div class="card sellers">
+        <h3>Sellers</h3>
+        <p>{{ sellers_count }}</p>
+    </div>
+</div>
+
+<h2>🛍️ Top Selling Products</h2>
+<table class="adminlist">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Seller</th>
+            <th>Orders</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in top_products %}
+        <tr>
+            <td>{{ product.name }}</td>
+            <td>{{ product.seller.email }}</td>
+            <td>{{ product.order_count }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No products found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2 style="margin-top: 40px;">🕒 Recent Orders (Last 7 Days)</h2>
+<table class="adminlist">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in recent_orders %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.user.email }}</td>
+            <td>{{ order.status }}</td>
+            <td>{{ order.payment_status }}</td>
+            <td>{{ order.created_at }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No recent orders.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
