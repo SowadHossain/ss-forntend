@@ -5,9 +5,10 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://shobshopping.com/
 // Create Axios instance
 const api = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // Do not set Content-Type globally; let Axios handle it per request
+  // headers: {
+  //   "Content-Type": "application/json",
+  // },
 });
 
 // Attach token on each request if available
@@ -102,7 +103,14 @@ export const API = {
 
   // Products
   getProducts: (search?: string) => api.get("/products/", { params: search ? { search } : {} }).then(res => res.data),
-  createProduct: (data: any) => api.post("/products/", data).then(res => res.data),
+  createProduct: (data: any) => {
+    if (data instanceof FormData) {
+      return api.post("/products/", data, {
+        headers: { "Content-Type": "multipart/form-data" }
+      }).then(res => res.data);
+    }
+    return api.post("/products/", data).then(res => res.data);
+  },
   getProductById: (id: number) => api.get(`/products/${id}/`).then(res => res.data),
   updateProduct: (id: number, data: any) => api.put(`/products/${id}/`, data).then(res => res.data),
   partialUpdateProduct: (id: number, data: any) => api.patch(`/products/${id}/`, data).then(res => res.data),

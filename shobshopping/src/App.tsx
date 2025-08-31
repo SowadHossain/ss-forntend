@@ -29,7 +29,7 @@ export default function App() {
           <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
           <Route path="/seller-dashboard" element={<SellerDashboard />} />
           <Route path="/seller-profile" element={<SellerProfilePage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          {/* <Route path="/admin" element={<AdminPage />} /> */}
           <Route path="/buyer-profile" element={<BuyerProfilePage />} />
           <Route path="/profile" element={<BuyerProfilePage />} />
           {/* Add more routes as needed */}

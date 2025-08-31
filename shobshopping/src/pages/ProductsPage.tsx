@@ -166,13 +166,16 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 overflow-x-hidden pt-28 lg:pt-0">
-  <NavbarSection />
-  {/* <SubNavbar /> */}
-      <BreadcrumbAndTags
-        categoryPath={["Home", "Products"]}
-        filters={activeTags}
-        onRemoveFilter={handleRemoveFilter}
-      />
+      <NavbarSection />
+      {/* <SubNavbar /> */}
+      
+      <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <BreadcrumbAndTags
+          categoryPath={["Home", "Products"]}
+          filters={activeTags}
+          onRemoveFilter={handleRemoveFilter}
+        />
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-8">
         <aside className="hidden lg:block w-64 flex-shrink-0">

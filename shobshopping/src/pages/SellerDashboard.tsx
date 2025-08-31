@@ -167,7 +167,7 @@ export default function SellerDashboard() {
     stock_quantity: "",
     category_id: "",
     tag_ids: [] as number[],
-    images: [] as File[],
+    image: ""
   })
 
   // Categories and tags state
@@ -227,16 +227,39 @@ export default function SellerDashboard() {
         stock_quantity: parseInt(newProduct.stock_quantity),
         category_id: parseInt(newProduct.category_id),
         tag_ids: newProduct.tag_ids,
-        image_base64: newProduct.images, // Now base64 strings
+        image_base64: newProduct.image, // Now base64 strings
+        // image: newProduct.images
       }
       const created = await API.createProduct(payload)
       setProducts((prev) => [created, ...prev])
       setShowAddProduct(false)
-      setNewProduct({ name: "", description: "", price: "", stock_quantity: "", category_id: "", tag_ids: [], images: [] })
+      setNewProduct({ name: "", description: "", price: "", stock_quantity: "", category_id: "", tag_ids: [], image: "" })
     } catch (err) {
       alert(err.message || "Failed to add product")
     }
   }
+
+  // const handleAddProduct = async (e: React.FormEvent) => {
+  //   e.preventDefault()
+  //   try {
+  //     const formData = new FormData()
+  //     formData.append("name", newProduct.name)
+  //     formData.append("description", newProduct.description)
+  //     formData.append("price", newProduct.price)
+  //     formData.append("stock_quantity", newProduct.stock_quantity)
+  //     formData.append("category_id", newProduct.category_id)
+  //     newProduct.tag_ids.forEach((tagId) => formData.append("tag_ids[]", String(tagId)))
+  //     if (newProduct.images.length > 0) {
+  //       formData.append("image", newProduct.images[0]) // Only one image
+  //     }
+  //     const created = await API.createProduct(formData)
+  //     setProducts((prev) => [created, ...prev])
+  //     setShowAddProduct(false)
+  //     setNewProduct({ name: "", description: "", price: "", stock_quantity: "", category_id: "", tag_ids: [], images: [] })
+  //   } catch (err) {
+  //     alert(err.message || "Failed to add product")
+  //   }
+  // }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -245,12 +268,47 @@ export default function SellerDashboard() {
       reader.onload = () => {
         setNewProduct((prev) => ({
           ...prev,
-          images: [reader.result as string], // Only one image
+          image: reader.result as string, // Store as string, not array
         }));
       };
       reader.readAsDataURL(file);
     }
   }
+  
+  // function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  //   const file = e.target.files?.[0];
+  //   if (file) {
+  //     setNewProduct((prev) => ({
+  //       ...prev,
+  //       images: [file], // Store as File object
+  //     }));
+  //   }
+  // }
+
+  // function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  //   const file = e.target.files?.[0];
+  //   if (file) {
+  //     setNewProduct((prev) => ({
+  //       ...prev,
+  //       images: [file],
+  //     }));
+  //   }
+  // }
+
+  // async function handleFileUpload(e: React.FormEvent) {
+  //   e.preventDefault();
+  //   if (!newProduct.images) return;
+
+  //   const formData = new FormData();
+  //   formData.append("file", newProduct.images);
+  //   // Add other fields if needed
+
+  //   // Replace with your API endpoint
+  //   await fetch("/upload", {
+  //     method: "POST",
+  //     body: formData,
+  //   });
+  // }
 
   const userRole = (profile?.role || "").toString().toLowerCase()
   const isSeller = userRole === "seller"
@@ -565,13 +623,24 @@ export default function SellerDashboard() {
                             accept="image/*"
                             onChange={handleImageUpload}
                           />
+                          {/* <form onSubmit={handleFileUpload}>
+                            <label htmlFor="file-upload">Select a file:</label>
+                            <input
+                              type="file"
+                              id="file-upload"
+                              name="file"
+                              onChange={handleFileChange}
+                              accept="image/*"
+                            />
+                            <button type="submit">Upload</button>
+                          </form> */}
                         </label>
                         <p className="pl-1">or drag and drop</p>
                       </div>
                       <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                     </div>
                   </div>
-                  {newProduct.images.length > 0 && (
+                  {newProduct.image.length > 0 && (
                     <div className="mt-2">
                       <p className="text-sm text-gray-600">1 file selected</p>
                     </div>

@@ -60,13 +60,13 @@ export default function ProductCard({ product }: { product: Product }) {
               {product.badge}
             </Badge>
           )}
-          <Button
+          {/* <Button
             size="sm"
             variant="ghost"
             className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-600 hover:text-red-500 shadow-sm backdrop-blur-sm transition-all duration-300"
           >
             <Heart className="w-4 h-4" />
-          </Button>
+          </Button> */}
         </div>
         <div className="p-2 sm:p-3 md:p-4 space-y-3">
           <h3 className="font-semibold text-gray-800 mb-2 text-xs sm:text-sm md:text-base overflow-hidden break-words line-clamp-2 group-hover:text-red-600 transition-colors duration-300" style={{maxWidth: '100%'}}>{product.name}</h3>
