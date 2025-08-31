@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 from backend.swagger import schema_view
 from rest_framework.permissions import AllowAny
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('api/admin/', admin.site.urls),
@@ -21,4 +23,4 @@ urlpatterns = [
     path('api/analytics/', include('analytics.urls')),  # ✅ moves outside /admin/
 
 
-]
+] + (static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) if settings.DEBUG else [])

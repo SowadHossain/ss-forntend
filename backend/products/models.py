@@ -63,7 +63,7 @@ class Product(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='DRAFT')
     moderation_status = models.CharField(max_length=15, choices=MODERATION_CHOICES, default='IN_REVIEW')
 
-    image = models.ImageField(upload_to='products/', null=True, blank=True)
+    image = models.ImageField(upload_to='product/', null=True, blank=True)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
     reviews = models.PositiveIntegerField(default=0)
 
