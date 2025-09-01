@@ -1,15 +1,19 @@
-import React, { useState } from "react"
-import { Link } from "react-router-dom"
-import { 
-  ArrowRight, Eye, EyeOff, Lock, Mail, Star, Store, User, AlertCircle, CheckCircle2 
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Eye, EyeOff, Lock, Mail, Star, Store, User
 } from "lucide-react"
-import { API } from "../lib/api"
+import React, { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
+import CookieConsent from "../components/CookieConsent"
 import { Button } from "../components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { Checkbox } from "../components/ui/checkbox"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { API } from "../lib/api"
 
 /** Status banner component */
 function StatusMessage({ type, message, onClose }: { 
@@ -17,7 +21,7 @@ function StatusMessage({ type, message, onClose }: {
   message: string; 
   onClose?: () => void 
 }) {
-  const styles = type === "error" 
+  const styles = type === "error"
     ? "bg-red-50 text-red-700 border-red-200"
     : "bg-green-50 text-green-700 border-green-200"
   const Icon = type === "error" ? AlertCircle : CheckCircle2
@@ -53,6 +57,26 @@ export default function AuthPage() {
 
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   const [isRegistering, setIsRegistering] = useState(false)
+  const [cookieAccepted, setCookieAccepted] = useState(false)
+
+  // Scroll to top when the page mounts
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    } catch (e) {
+      // fallback for environments without window
+      // noop
+    }
+    // initialize cookieAccepted from existing cookie
+    try {
+      const match = document.cookie.match(/(?:^|; )cookie_consent=([^;]*)/);
+      if (match) setCookieAccepted(Boolean(match[1]))
+    } catch (e) {}
+    // listen for accept event from CookieConsent
+    const onAccept = () => setCookieAccepted(true)
+    window.addEventListener("cookie-consent-accepted", onAccept)
+    return () => window.removeEventListener("cookie-consent-accepted", onAccept)
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,9 +87,11 @@ export default function AuthPage() {
       const access = (data as any)?.access || (data as any)?.access_token
       const refresh = (data as any)?.refresh || (data as any)?.refresh_token
       if (access) sessionStorage.setItem("accessToken", access)
-      if (loginData.remember && refresh) {
+      // Only persist refresh token if user checked "Remember me" and cookie consent exists
+      if (loginData.remember && refresh && cookieAccepted) {
         document.cookie = `refreshToken=${refresh}; path=/; max-age=${60 * 60 * 24 * 30}`
       } else {
+        // clear any existing refresh token
         document.cookie = "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;"
       }
 
@@ -121,7 +147,8 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 flex items-center justify-center p-4">
+      <CookieConsent />
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         {/* LEFT BRANDING SECTION */}
         <div className="hidden lg:flex flex-col justify-center space-y-8">
@@ -136,7 +163,7 @@ export default function AuthPage() {
 
           <div className="space-y-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-purple-400 to-pink-500">
+              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-to-r from-red-400 to-pink-500">
                 <Star className="text-white w-6 h-6" />
               </div>
               <div>
@@ -173,8 +200,8 @@ export default function AuthPage() {
 
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-100">
-                  <TabsTrigger value="login" className="data-[state=active]:bg-white data-[state=active]:text-blue-600">Login</TabsTrigger>
-                  <TabsTrigger value="register" className="data-[state=active]:bg-white data-[state=active]:text-blue-600">Sign Up</TabsTrigger>
+                  <TabsTrigger value="login" className="data-[state=active]:bg-white data-[state=active]:text-red-600">Login</TabsTrigger>
+                  <TabsTrigger value="register" className="data-[state=active]:bg-white data-[state=active]:text-red-600">Sign Up</TabsTrigger>
                 </TabsList>
 
                 {/* LOGIN FORM */}
@@ -219,14 +246,18 @@ export default function AuthPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           checked={loginData.remember}
-                          onCheckedChange={(c) => setLoginData({ ...loginData, remember: c as boolean })}
+                          onCheckedChange={(c) => {
+                            if (!cookieAccepted) return
+                            setLoginData({ ...loginData, remember: c as boolean })
+                          }}
                           id="remember"
+                          disabled={!cookieAccepted}
                         />
-                        <Label htmlFor="remember" className="text-sm">Remember me</Label>
+                        <Label htmlFor="remember" className={`text-sm ${!cookieAccepted ? "text-gray-400" : ""}`}>Remember me</Label>
                       </div>
-                      <Link to="/auth/forgot-password" className="text-sm text-blue-600 hover:underline">Forgot password?</Link>
+                      <Link to="/auth/forgot-password" className="text-sm text-red-600 hover:underline">Forgot password?</Link>
                     </div>
-                    <Button disabled={isLoggingIn} className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                    <Button disabled={isLoggingIn} className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white">
                       {isLoggingIn ? "Signing In..." : "Sign In"}
                     </Button>
                   </form>
@@ -270,7 +301,7 @@ export default function AuthPage() {
                           type="button"
                           variant={registerData.userType === "buyer" ? "default" : "outline"}
                           onClick={() => setRegisterData({ ...registerData, userType: "buyer" })}
-                          className={`w-full ${registerData.userType === "buyer" ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white" : ""}`}
+                          className={`w-full ${registerData.userType === "buyer" ? "bg-gradient-to-r from-red-500 to-red-600 text-white" : ""}`}
                         >
                           <User className="w-4 h-4 mr-2" /> Buyer
                         </Button>
@@ -278,7 +309,7 @@ export default function AuthPage() {
                           type="button"
                           variant={registerData.userType === "seller" ? "default" : "outline"}
                           onClick={() => setRegisterData({ ...registerData, userType: "seller" })}
-                          className={`w-full ${registerData.userType === "seller" ? "bg-gradient-to-r from-green-500 to-teal-600 text-white" : ""}`}
+                          className={`w-full ${registerData.userType === "seller" ? "bg-gradient-to-r from-red-500 to-red-600 text-white" : ""}`}
                         >
                           <Store className="w-4 h-4 mr-2" /> Seller
                         </Button>
@@ -321,11 +352,11 @@ export default function AuthPage() {
                         id="terms"
                       />
                       <Label htmlFor="terms" className="text-sm">
-                        I agree to the <Link to="/terms" className="text-blue-600 hover:underline">Terms & Conditions</Link>
+                        I agree to the <Link to="/terms" className="text-red-600 hover:underline">Terms & Conditions</Link>
                       </Label>
                     </div>
 
-                    <Button disabled={isRegistering} className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white">
+                    <Button disabled={isRegistering} className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white">
                       {isRegistering ? "Creating Account..." : "Create Account"}
                     </Button>
                   </form>

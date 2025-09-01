@@ -17,8 +17,25 @@ type Product = {
 }
 
 interface ProductGridProps {
-  products: Product[]
-  viewMode: "grid" | "list"
+  products: {
+    _price: number;
+    _matchScore: number;
+    _name: string;
+    _seller: string;
+    id: string;
+    name: string;
+    description: string;
+    price: string | number;
+    seller: string;
+    category?: {
+      name: string;
+    };
+    tags?: {
+      name: string;
+    }[];
+    image?: string;
+  }[];
+  viewMode: "grid" | "list";
 }
 
 export default function ProductGrid({ products, viewMode }: ProductGridProps) {
@@ -27,8 +44,8 @@ export default function ProductGrid({ products, viewMode }: ProductGridProps) {
       <div
         className={`grid gap-6 ${
           viewMode === "grid"
-            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-            : "grid-cols-1"
+            ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3"
+            : "grid-cols-2"
         }`}
       >
         {products.map((product) => (

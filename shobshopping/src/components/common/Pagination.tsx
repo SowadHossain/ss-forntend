@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
-import { useEffect } from "react"
+import { KeyboardEvent, useEffect } from "react"
 
 interface PaginationProps {
   currentPage: number
@@ -14,102 +14,113 @@ export default function Pagination({
   itemsPerPage,
   onPageChange,
 }: PaginationProps) {
-  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  const safeItemsPerPage = Math.max(1, Math.floor(itemsPerPage) || 1)
+  const totalPages = Math.max(0, Math.ceil(totalItems / safeItemsPerPage))
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    // Keep UX consistent: scroll to top when page changes
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    } catch (_) {
+      /* ignore in non-browser environments */
+    }
   }, [currentPage])
 
   if (totalPages <= 1) return null
 
-  const handleFirst = () => {
-    onPageChange(1)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-  const handlePrev = () => {
-    onPageChange(Math.max(1, currentPage - 1))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-  const handleNext = () => {
-    onPageChange(Math.min(totalPages, currentPage + 1))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-  const handleLast = () => {
-    onPageChange(totalPages)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  const go = (page: number) => {
+    const next = Math.min(Math.max(1, Math.floor(page)), totalPages)
+    if (next !== currentPage) onPageChange(next)
   }
 
-  const handlePageChange = (page: number) => {
-    onPageChange(page)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  const handleKey = (e: KeyboardEvent, page: number | string) => {
+    if (typeof page === "number" && (e.key === "Enter" || e.key === " ")) go(page)
   }
 
-  // Show up to 5 page numbers, with "..." if needed
-  const getPageNumbers = () => {
+  // Build page items per your explicit rules
+  const buildPages = (): (number | string)[] => {
     const pages: (number | string)[] = []
-    if (totalPages <= 5) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i)
+    // if (totalPages <= 5) {
+    //   for (let i = 1; i <= totalPages; i++) pages.push(i)
+    //   return pages
+    // }
+
+    if (currentPage === 1) {
+      pages.push(1, "...", totalPages)
+    } else if (currentPage === totalPages) {
+      pages.push(1, "...", totalPages)
+    } else if (currentPage === 2) {
+      pages.push(1, 2, "...", totalPages)
+    } else if (currentPage === totalPages - 1) {
+      pages.push(1, "...", totalPages - 1, totalPages)
     } else {
-      if (currentPage <= 3) {
-        pages.push(1, 2, 3, 4, "...", totalPages)
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
-      } else {
-        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages)
-      }
+      pages.push(1, "...", currentPage, "...", totalPages)
     }
+
     return pages
   }
 
+  const pages = buildPages()
+
   return (
-    <div className="flex justify-center mt-8 space-x-2">
+    <nav aria-label="Pagination" className="flex justify-center mt-8 items-center space-x-2">
       <button
-        onClick={handleFirst}
+        onClick={() => go(1)}
         disabled={currentPage === 1}
+        aria-label="First page"
         className="px-2 py-1 rounded border text-sm transition bg-white text-gray-700 hover:bg-blue-50 disabled:opacity-50"
       >
-        {<ChevronsLeft />}
+        <ChevronsLeft />
       </button>
+
       <button
-        onClick={handlePrev}
+        onClick={() => go(currentPage - 1)}
         disabled={currentPage === 1}
+        aria-label="Previous page"
         className="px-2 py-1 rounded border text-sm transition bg-white text-gray-700 hover:bg-blue-50 disabled:opacity-50"
       >
-        {<ChevronLeft />}
+        <ChevronLeft />
       </button>
-      {getPageNumbers().map((page, idx) =>
-        page === "..." ? (
-          <span key={idx} className="px-3 py-1 text-gray-400">
-            ...
-          </span>
-        ) : (
+
+      {pages.map((p, i) =>
+        typeof p === "number" ? (
           <button
-            key={page}
-            onClick={() => handlePageChange(Number(page))}
-            className={`px-3 py-1 rounded border text-sm transition ${
-              currentPage === page
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 hover:bg-blue-50"
+            key={`page-${p}-${i}`}
+            onClick={() => go(p)}
+            onKeyDown={(e) => handleKey(e, p)}
+            aria-current={p === currentPage ? "page" : undefined}
+            aria-label={p === currentPage ? `Page ${p}, current` : `Go to page ${p}`}
+            disabled={p === currentPage}
+            className={`px-3 py-1 rounded border text-sm transition bg-white text-gray-700 disabled:opacity-50 ${
+              p === currentPage ? "bg-blue-500 text-black border-blue-500 hover:bg-blue-50 hover:cursor-pointer" : ""
             }`}
           >
-            {page}
+            {p}
           </button>
+        ) : (
+          <span key={`dots-${i}`} className="px-3 py-1 text-sm text-gray-500" aria-hidden>
+            {p}
+          </span>
         )
       )}
+
       <button
-        onClick={handleNext}
+        onClick={() => go(currentPage + 1)}
         disabled={currentPage === totalPages}
+        aria-label="Next page"
         className="px-2 py-1 rounded border text-sm transition bg-white text-gray-700 hover:bg-blue-50 disabled:opacity-50"
       >
-        {<ChevronRight />}
+        <ChevronRight />
       </button>
+
       <button
-        onClick={handleLast}
+        onClick={() => go(totalPages)}
         disabled={currentPage === totalPages}
+        aria-label="Last page"
         className="px-2 py-1 rounded border text-sm transition bg-white text-gray-700 hover:bg-blue-50 disabled:opacity-50"
       >
-        {<ChevronsRight />}
+        <ChevronsRight />
       </button>
-    </div>
+    </nav>
   )
 }

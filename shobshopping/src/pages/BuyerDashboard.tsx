@@ -1,35 +1,27 @@
 import {
   Bell,
+  CheckSquare,
+  ChevronDown,
   CreditCard,
-  Download,
-  Edit,
+  DollarSign,
   Eye,
-  Filter,
+  HeadphonesIcon,
   Heart,
+  LayoutDashboard,
+  LockIcon,
   LogOut,
   MessageSquare,
   Package,
+  Pencil,
   Plus,
+  Rocket,
+  Settings,
+  ShieldCheck,
   ShoppingBag,
   Star,
   Trash2,
   Truck,
-  Binary,
-  HeadphonesIcon,
-  Settings,
-  LayoutDashboard,
-  Check,
-  CheckSquare,
-  LockIcon,
-  Shield,
-  ShieldCheck,
-  CurrencyIcon,
-  Currency,
-  DollarSign,
-  Pencil,
-  Rocket,
-  User,
-  ChevronDown
+  User
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -51,8 +43,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Switch } from "../components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Textarea } from "../components/ui/textarea";
+import { useCart } from "../context/CartContext";
 import { API } from "../lib/api";
-import { Value } from "@radix-ui/react-select";
 
 export default function BuyerDashboard() {
   const navigate = useNavigate();
@@ -94,6 +86,8 @@ export default function BuyerDashboard() {
   const [loadingWishlist, setLoadingWishlist] = useState(true);
   const [loadingTickets, setLoadingTickets] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { addToCart, refreshCart } = useCart();
 
   // New: dropdown menu state + ref (like SellerDashboard)
   const [showMenu, setShowMenu] = useState(false);
@@ -653,76 +647,161 @@ export default function BuyerDashboard() {
               <p className="text-gray-600">{loadingWishlist ? "..." : wishlist.length} items saved</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {loadingWishlist && <p>Loading wishlist...</p>}
               {!loadingWishlist && wishlist.length === 0 && <p>No wishlist items found.</p>}
               {!loadingWishlist &&
-                wishlist.map((item) => (
-                  <Card key={item.id} className="border-gray-200 bg-white hover:shadow-lg transition-shadow">
-                    <CardContent className="p-0">
-                      <div className="relative">
-                        <img
-                          src={item.image || "/placeholder.svg"}
-                          alt={item.name}
-                          className="w-full h-48 object-cover rounded-t-lg"
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-500 hover:text-red-600"
-                        >
-                          <Heart className="w-4 h-4 fill-current" />
-                        </Button>
-                        {!item.inStock && (
-                          <div className="absolute inset-0 bg-black/50 rounded-t-lg flex items-center justify-center">
-                            <Badge className="bg-red-500 text-white">Out of Stock</Badge>
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{item.name}</h3>
-                        <div className="flex items-center mb-2">
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${
-                                  i < Math.floor(item.rating) ? "text-yellow-400 fill-current" : "text-gray-300"
-                                }`}
+                wishlist.map((item) => {
+                  // Support both shapes: item can be the product itself or { id, product, added_at }
+                  const product: any = (item && (item.product || item.product_id)) ? item.product : item;
+                  // Fallback if the API returns product at top-level
+                  const image = product?.image_url || product?.image || "/placeholder.svg";
+                  const name = product?.name || "Unnamed product";
+                  const price = product?.price ?? product?.price_string ?? "0.00";
+                  const originalPrice = product?.original_price ?? product?.originalPrice ?? null;
+                  const rating = Math.floor(Number(product?.rating || 0));
+                  const reviews = product?.reviews ?? 0;
+                  const seller = product?.seller ?? "";
+                  const inStock = typeof product?.stock_quantity === "number" ? product.stock_quantity > 0 : (product?.inStock ?? true);
+
+                  return (
+                    <Card key={item.id ?? product?.id} className="border-gray-200 bg-white hover:shadow-lg transition-shadow hover:cursor-pointer" onClick={() => window.location.href = `/product/${product?.id || ""}`}>
+                      <CardContent className="p-0">
+                        <div className="relative">
+                          <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-white flex items-center justify-center relative">
+                            {/* Blurred background using same image for a nicer look */}
+                            <div className="absolute inset-0 rounded-t-lg overflow-hidden" aria-hidden>
+                              <div
+                                style={{ backgroundImage: `url(${image})` }}
+                                className="w-full h-full bg-center bg-cover filter blur-2xl scale-105"
                               />
-                            ))}
+                              <div className="absolute inset-0 bg-white/30" />
+                            </div>
+
+                            <img
+                              src={image}
+                              alt={name}
+                              className="relative z-10 max-w-full max-h-full object-contain"
+                            />
                           </div>
-                          <span className="text-sm text-gray-500 ml-2">({item.reviews})</span>
-                        </div>
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <span className="text-lg font-bold text-gray-800">${item.price}</span>
-                            <span className="text-sm text-gray-500 line-through ml-2">${item.originalPrice}</span>
-                          </div>
-                          <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
-                            {item.seller}
-                          </Badge>
-                        </div>
-                        <div className="flex space-x-2">
+
                           <Button
-                            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-                            disabled={!item.inStock}
-                          >
-                            <ShoppingBag className="w-4 h-4 mr-2" />
-                            {item.inStock ? "Add to Cart" : "Notify Me"}
-                          </Button>
-                          <Button
-                            variant="outline"
                             size="sm"
-                            className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
+                            variant="ghost"
+                            className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-500 hover:text-red-600"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Heart className="w-4 h-4 fill-current" />
                           </Button>
+
+                          {!inStock && (
+                            <div className="absolute inset-0 bg-black/50 rounded-t-lg flex items-center justify-center">
+                              <Badge className="bg-red-500 text-white">Out of Stock</Badge>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="p-4">
+                          <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{name}</h3>
+                          <div className="flex items-center mb-2">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${i < rating ? "text-yellow-400 fill-current" : "text-gray-300"}`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-500 ml-2">({reviews})</span>
+                          </div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <span className="text-lg font-bold text-gray-800">{price && price.toString().startsWith("BDT") ? price : `BDT ${price}`}</span>
+                              {originalPrice && (
+                                <span className="text-sm text-gray-500 line-through ml-2">{originalPrice}</span>
+                              )}
+                            </div>
+                            <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600">
+                              {seller}
+                            </Badge>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              onClick={async () => {
+                                // add to cart handler (1 quantity)
+                                const wishlistEntryId = item && item.product ? item.id : null;
+                                const productObj: any = (item && (item.product || item.product_id)) ? item.product : item;
+                                try {
+                                  if (!inStock) return;
+                                  // If user is authenticated and wishlist entry exists, use dedicated move endpoint
+                                  const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+                                  if (token && wishlistEntryId) {
+                                    setLoadingWishlist(true);
+                                    await API.moveWishlistItemToCart(wishlistEntryId, { quantity: 1 });
+                                    await refreshCart();
+                                    const data = await API.getWishlist();
+                                    setWishlist(data);
+                                  } else {
+                                    // Local or generic flow: use cart context
+                                    await addToCart({ product: productObj, quantity: 1 });
+                                    // If wishlist entry exists on server but we couldn't use move endpoint, try deleting it
+                                    if (wishlistEntryId && token) {
+                                      await API.deleteWishlistItem(wishlistEntryId);
+                                      const data = await API.getWishlist();
+                                      setWishlist(data);
+                                    } else {
+                                      // Remove from local wishlist state if present
+                                      setWishlist((prev) => prev.filter((w) => (w.id ?? w.product?.id ?? w.id) !== (item.id ?? productObj.id)));
+                                    }
+                                  }
+                                } catch (e: any) {
+                                  setError(e?.message || "Failed to add to cart");
+                                } finally {
+                                  setLoadingWishlist(false);
+                                }
+                              }}
+                              className={
+                                inStock
+                                  ? "flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                                  : "flex-1 bg-gray-200 text-gray-500 cursor-not-allowed"
+                              }
+                              disabled={!inStock}
+                            >
+                              <ShoppingBag className="w-4 h-4 mr-2" />
+                              {inStock ? "Add to Cart" : "Out of Stock"}
+                            </Button>
+                            <Button
+                              onClick={async () => {
+                                // delete wishlist item handler
+                                const wishlistEntryId = item && item.product ? item.id : null;
+                                try {
+                                  setLoadingWishlist(true);
+                                  const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+                                  if (token && wishlistEntryId) {
+                                    await API.deleteWishlistItem(wishlistEntryId);
+                                    const data = await API.getWishlist();
+                                    setWishlist(data);
+                                  } else {
+                                    // Local-only or product-only shape: remove from UI state
+                                    const productObj: any = (item && (item.product || item.product_id)) ? item.product : item;
+                                    setWishlist((prev) => prev.filter((w) => (w.id ?? w.product?.id ?? w.id) !== (item.id ?? productObj.id)));
+                                  }
+                                } catch (e: any) {
+                                  setError(e?.message || "Failed to remove wishlist item");
+                                } finally {
+                                  setLoadingWishlist(false);
+                                }
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
           </TabsContent>
 

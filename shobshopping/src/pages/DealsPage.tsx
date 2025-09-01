@@ -1,51 +1,57 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import FooterSection from "../components/HomePage/FooterSection";
+import Navbar from "../components/ProductsPage/NavbarSection";
 
 const DealsPage: React.FC = () => {
-  const [deals, setDeals] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+  
+  // Scroll to top when the page mounts
   useEffect(() => {
-    const fetchDeals = async () => {
-      try {
-        const res = await fetch("/api/deals");
-        if (!res.ok) throw new Error("Failed to fetch deals");
-        const data = await res.json();
-        setDeals(data);
-      } catch (err: any) {
-        setError(err.message || "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDeals();
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    } catch (e) {
+      // fallback for environments without window
+      // noop
+    }
   }, []);
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Deals</h1>
-      <p className="mb-4">Check out the latest deals and offers!</p>
-      {loading && <div>Loading deals...</div>}
-      {error && <div className="text-red-500">Error: {error}</div>}
-      {!loading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {deals.length === 0 ? (
-            <div className="col-span-3 text-center text-gray-500">No deals available.</div>
-          ) : (
-            deals.map((deal) => (
-              <div key={deal.id} className="bg-white shadow rounded p-4">
-                <h2 className="text-xl font-semibold mb-2">{deal.title}</h2>
-                <p className="mb-2">{deal.description}</p>
-                {deal.image && (
-                  <img src={deal.image} alt={deal.title} className="mb-2 w-full h-40 object-cover rounded" />
-                )}
-                <button className="bg-blue-500 text-white px-4 py-2 rounded">View Deal</button>
-              </div>
-            ))
-          )}
+    <>
+      <Navbar />
+
+      <main className="flex items-center justify-center min-h-[60vh] p-8 bg-gray-50">
+        <div className="text-center max-w-xl">
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Deals — Coming Soon</h1>
+          <p className="text-gray-600 mb-6">
+            We're working on exclusive deals and offers for you. Check back soon — great savings are on the way!
+          </p>
+
+          <div className="mb-6 flex items-center justify-center gap-4">
+            <img
+              src="/logo.png"
+              alt="SS mark"
+              className="w-20 md:w-28 h-auto object-contain opacity-95"
+            />
+
+            <img
+              src="/text_ss.png"
+              alt="SS horizontal logo"
+              className="w-40 md:w-64 h-auto object-contain opacity-95"
+            />
+          </div>
+
+          <div>
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="inline-block text-white px-5 py-3 rounded-lg shadow bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-300"
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
-      )}
-    </div>
+      </main>
+
+      <FooterSection />
+    </>
   );
 };
 

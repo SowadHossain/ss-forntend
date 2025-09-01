@@ -60,13 +60,25 @@ export default function HomePage() {
       {/* Show a few category showcases derived from API categories */}
       {categories.slice(0, 3).map((category: any, index: number) => {
         // Match products by category name when available
+        // Determine number of products to show based on device width
+        const getShowcaseCount = () => {
+          if (typeof window !== "undefined") {
+            const width = window.innerWidth
+            if (width < 768) return 2 // phone
+            if (width < 1024) return 4 // tablet
+          }
+          return 5 // pc
+        }
+
+        const showcaseCount = getShowcaseCount()
+
         const categoryProducts = products
           .filter((p) => {
             const prodCatName = p.category?.name || (typeof p.category === "string" ? p.category : "")
             const catName = category?.name || category?.title || ""
             return prodCatName && catName && prodCatName.toString().toLowerCase() === catName.toString().toLowerCase()
           })
-          .slice(0, 4)
+          .slice(0, showcaseCount)
           .map((p) => ({
             id: p.id,
             name: p.name,

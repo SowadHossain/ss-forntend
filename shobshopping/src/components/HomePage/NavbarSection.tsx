@@ -1,4 +1,4 @@
-import { ChevronDown, Heart, Menu, Search, ShoppingCart, User, X } from "lucide-react"
+import { ChevronDown, Menu, Search, ShoppingCart, User, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { API } from "../../lib/api"
@@ -40,6 +40,11 @@ export default function Navbar() {
   const navigate = useNavigate()
 
   const [searchQuery, setSearchQuery] = useState("")
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+  const suggestionsRef = useRef<HTMLDivElement | null>(null)
+  const suggestionsDebounce = useRef<number | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
@@ -173,10 +178,63 @@ export default function Navbar() {
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
+      // ProductsPage expects `query` param
+      navigate(`/products?query=${encodeURIComponent(searchQuery.trim())}`)
       setMobileOpen(false)
     }
   }, [searchQuery, navigate])
+
+  // Debounced suggestions for search input
+  useEffect(() => {
+    // clear previous debounce
+    if (suggestionsDebounce.current) {
+      window.clearTimeout(suggestionsDebounce.current)
+      suggestionsDebounce.current = null
+    }
+
+    const q = searchQuery.trim()
+    if (!q) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      setLoadingSuggestions(false)
+      return
+    }
+
+    setLoadingSuggestions(true)
+    // debounce 300ms
+    suggestionsDebounce.current = window.setTimeout(async () => {
+      try {
+        const data = await API.getProducts(q)
+        const list: any[] = Array.isArray(data) ? data : data.results ?? data.data ?? []
+        setSuggestions(list.slice(0, 8))
+        setShowSuggestions(true)
+      } catch (err) {
+        console.error("Failed to load product suggestions:", err)
+        setSuggestions([])
+        setShowSuggestions(false)
+      } finally {
+        setLoadingSuggestions(false)
+      }
+    }, 300)
+
+    return () => {
+      if (suggestionsDebounce.current) {
+        window.clearTimeout(suggestionsDebounce.current)
+        suggestionsDebounce.current = null
+      }
+    }
+  }, [searchQuery])
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   // Handle logout
   const handleLogout = useCallback(() => {
@@ -195,8 +253,8 @@ export default function Navbar() {
 
   // Generate category URL
   const getCategoryUrl = useCallback((category: Category) => {
-    const slug = category.slug || category.name.toLowerCase().replace(/\s+/g, "-")
-    return `/categories/${encodeURIComponent(slug)}`
+    const slug = category.name
+    return `/products?categories=${encodeURIComponent(slug)}`
   }, [])
 
   // Determine dashboard path based on user role
@@ -238,6 +296,7 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 pr-12 py-2.5 w-full border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-white rounded-lg"
+                onFocus={() => { if (suggestions.length) setShowSuggestions(true) }}
               />
               <button
                 type="submit"
@@ -245,6 +304,33 @@ export default function Navbar() {
               >
                 Search
               </button>
+
+              {/* Suggestions dropdown (desktop) */}
+              {showSuggestions && (
+                <div ref={suggestionsRef} className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                  {loadingSuggestions ? (
+                    <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
+                  ) : suggestions.length ? (
+                    suggestions.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setShowSuggestions(false)
+                          setSearchQuery(p.name || p.title || "")
+                          setMobileOpen(false)
+                          navigate(`/products/${p.id}`)
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm text-gray-700"
+                      >
+                        <div className="font-medium truncate">{p.name || p.title}</div>
+                        <div className="text-xs text-gray-500">{p.seller ? `By ${p.seller}` : p.category?.name}</div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-gray-500">No results</div>
+                  )}
+                </div>
+              )}
             </form>
           </div>
 
@@ -420,7 +506,8 @@ export default function Navbar() {
               type="text"
               placeholder="Search for products..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => { if (suggestions.length) setShowSuggestions(true) }}
               className="pl-10 pr-20 py-2.5 w-full border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-white rounded-lg"
             />
             <button
@@ -429,6 +516,33 @@ export default function Navbar() {
             >
               Search
             </button>
+
+                {/* Suggestions (mobile) */}
+                {showSuggestions && (
+                  <div ref={suggestionsRef} className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                    {loadingSuggestions ? (
+                      <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
+                    ) : suggestions.length ? (
+                      suggestions.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => {
+                            setShowSuggestions(false)
+                            setSearchQuery(p.name || p.title || "")
+                            setMobileOpen(false)
+                            navigate(`/products/${p.id}`)
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm text-gray-700"
+                        >
+                          <div className="font-medium truncate">{p.name || p.title}</div>
+                          <div className="text-xs text-gray-500">{p.seller ? `By ${p.seller}` : p.category?.name}</div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-gray-500">No results</div>
+                    )}
+                  </div>
+                )}
           </form>
         </div>
       </div>

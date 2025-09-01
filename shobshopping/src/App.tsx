@@ -1,10 +1,10 @@
 import { Bolt, Lock, MapIcon } from "lucide-react";
 import { Route, Routes } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
-import AdminPage from "./pages/AdminPage";
 import BuyerDashboard from "./pages/BuyerDashboard";
 import BuyerProfilePage from "./pages/BuyerProfilePage";
 import CartPage from "./pages/CartPage";
+import CheckoutPage from "./pages/CheckoutPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFound";
@@ -13,7 +13,13 @@ import ProductsPage from "./pages/ProductsPage";
 import SellerDashboard from "./pages/SellerDashboard";
 import SellerProfilePage from "./pages/SellerProfilePage";
 
+import ContactPage from "./pages/ContactPage";
+import CookiesPage from "./pages/CookiesPage";
 import DealsPage from "./pages/DealsPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import RefundsPage from "./pages/RefundsPage";
+import ShippingPage from "./pages/ShippingPage";
+import TermsPage from "./pages/TermsPage";
 
 
 export default function App() {
@@ -25,7 +31,14 @@ export default function App() {
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/shipping" element={<ShippingPage />} />
+          <Route path="/returns" element={<RefundsPage />} />
+            <Route path="/contact" element={<ContactPage />} />
           <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
           <Route path="/seller-dashboard" element={<SellerDashboard />} />
           <Route path="/seller-profile" element={<SellerProfilePage />} />
@@ -46,15 +59,15 @@ export default function App() {
             &copy; 2025 ShobShopping, Inc. All rights reserved.
               </div>
               <div className="flex items-center space-x-6 mt-2 md:mt-0">
-            <span className="flex items-center gap-2 text-green-600 font-medium">
-              <MapIcon size={18} strokeWidth={2} /> Nationwide shipping
-            </span>
-            <span className="flex items-center gap-1 text-red-600">
-              <Bolt size={16} /> Lightning-fast delivery
-            </span>
-            <span className="flex items-center gap-1 text-yellow-600">
-              <Lock size={16} /> 100% secure checkout
-            </span>
+                <span className="flex items-center gap-2 text-green-600 font-medium">
+                  <MapIcon size={18} strokeWidth={2} /> Nationwide shipping
+                </span>
+                <span className="flex items-center gap-1 text-red-600">
+                  <Bolt size={16} /> Lightning-fast delivery
+                </span>
+                <span className="flex items-center gap-1 text-yellow-600">
+                  <Lock size={16} /> 100% secure checkout
+                </span>
               </div>
             </div>
           </div>

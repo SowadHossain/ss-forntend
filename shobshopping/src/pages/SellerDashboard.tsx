@@ -581,7 +581,7 @@ export default function SellerDashboard() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-gray-700">Price ($) *</Label>
+                    <Label className="text-gray-700">Price (BDT) *</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -948,9 +948,9 @@ export default function SellerDashboard() {
                                     )}
                                   </DialogContent>
                                 </Dialog>
-                                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
+                                {/* <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
                                   <Edit className="w-4 h-4" />
-                                </Button>
+                                </Button> */}
                                 {/* <Button variant="ghost" size="sm" className="text-gray-600 hover:text-red-600">
                                   <Trash2 className="w-4 h-4" />
                                 </Button> */}

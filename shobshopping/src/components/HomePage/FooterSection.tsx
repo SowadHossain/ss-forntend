@@ -51,7 +51,7 @@ export default function FooterSection() {
               {useCategories().map(category => (
               <li key={category.id}>
                 <a
-                href={`/categories/${category.id}`}
+                href={`/products?categories=${encodeURIComponent(category.name)}`}
                 className="text-gray-700 hover:text-red-600 transition-colors"
                 >
                 {category.name}
@@ -65,7 +65,7 @@ export default function FooterSection() {
           <div>
             <h3 className="font-semibold text-red-600 mb-4">Customer Service</h3>
             <ul className="space-y-2 text-sm">
-              <li><a href="/help" className="text-gray-700 hover:text-red-600 transition-colors">Help Center</a></li>
+              <li><a href="/buyer-dashboard?tab=support" className="text-gray-700 hover:text-red-600 transition-colors">Help Center</a></li>
               <li><a href="/returns" className="text-gray-700 hover:text-red-600 transition-colors">Returns & Refunds</a></li>
               <li><a href="/shipping" className="text-gray-700 hover:text-red-600 transition-colors">Shipping Information</a></li>
               <li><a href="/contact" className="text-gray-700 hover:text-red-600 transition-colors">Contact Us</a></li>
@@ -78,7 +78,7 @@ export default function FooterSection() {
             <ul className="space-y-2 text-sm mb-6">
               <li><a href="/login" className="text-gray-700 hover:text-red-600 transition-colors">Sign In</a></li>
               <li><a href="/buyer-dashboard" className="text-gray-700 hover:text-red-600 transition-colors">Dashboard</a></li>
-              <li><a href="/account/wishlist" className="text-gray-700 hover:text-red-600 transition-colors">Wishlist</a></li>
+              <li><a href="/buyer-dashboard?tab=wishlist" className="text-gray-700 hover:text-red-600 transition-colors">Wishlist</a></li>
             </ul>
             
             <h4 className="font-semibold text-red-600 mb-3 text-sm">Legal</h4>
@@ -95,25 +95,23 @@ export default function FooterSection() {
       <div className="border-t border-red-200 bg-red-25">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <span className="text-sm text-gray-600">Accepted Payment Methods:</span>
-              <div className="flex items-center space-x-3">
-                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
-                  <span className="text-xs font-bold text-blue-600">VISA</span>
-                </div>
-                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
-                  <span className="text-xs font-bold text-red-600">MC</span>
-                </div>
-                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
-                  <span className="text-xs font-bold text-blue-800">AMEX</span>
-                </div>
-                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
-                  <span className="text-xs font-bold text-yellow-600">PAYPAL</span>
-                </div>
-                <div className="bg-white rounded shadow-sm px-3 py-2 border border-gray-200">
-                  <span className="text-xs font-bold text-green-600">APPLE PAY</span>
-                </div>
-              </div>
+            <div
+              className="flex items-center gap-4 select-none"
+              draggable={false}
+              style={{ userSelect: "none" }}
+              onCopy={e => e.preventDefault()}
+              onContextMenu={e => e.preventDefault()}
+            >
+              <span className="text-sm text-gray-600">Powered by</span>
+              <img
+              src="https://www.ucb.com.bd/assets/img/logo.png"
+              alt="UCB Logo"
+              className="h-8"
+              draggable={false}
+              style={{ userSelect: "none" }}
+              onCopy={e => e.preventDefault()}
+              onContextMenu={e => e.preventDefault()}
+              />
             </div>
             
             <div className="flex items-center space-x-4">

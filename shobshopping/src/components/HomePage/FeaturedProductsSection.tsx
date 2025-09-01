@@ -1,5 +1,5 @@
 // src/components/HomePage/FeaturedProductsSection.tsx
-import { Heart, Star } from "lucide-react"
+import { Heart, Star, Stars } from "lucide-react"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { Card, CardContent } from "../ui/card"
@@ -40,7 +40,7 @@ export default function FeaturedProductsSection({ products }: FeaturedProductsSe
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-50 to-purple-50">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">Featured Products 🌟</h2>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Featured Products <Stars className="inline-block w-6 h-6 text-yellow-400" /></h2>
           <p className="text-gray-600">Handpicked deals just for you!</p>
         </div>
         {/* Render up to 8 items in a 4-column grid (2 rows on desktop) */}
