@@ -1,0 +1,23 @@
+[0;1;32m●[0m gunicorn.service - Gunicorn daemon for Django
+     Loaded: loaded (]8;;file://srv921349/etc/systemd/system/gunicorn.service/etc/systemd/system/gunicorn.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Tue 2025-09-09 05:33:16 UTC; 20s ago
+   Main PID: 903645 (gunicorn)
+      Tasks: 4 (limit: 9485)
+     Memory: 126.9M (peak: 127.4M)
+        CPU: 1.167s
+     CGroup: /system.slice/gunicorn.service
+             ├─[0;38;5;245m903645 /var/www/ss-forntend/backend/venv/bin/python3 /var/www/ss-forntend/backend/venv/bin/gunicorn --access-logfile - --workers 3 --bind 127.0.0.1:8000 backend.wsgi:application[0m
+             ├─[0;38;5;245m903647 /var/www/ss-forntend/backend/venv/bin/python3 /var/www/ss-forntend/backend/venv/bin/gunicorn --access-logfile - --workers 3 --bind 127.0.0.1:8000 backend.wsgi:application[0m
+             ├─[0;38;5;245m903648 /var/www/ss-forntend/backend/venv/bin/python3 /var/www/ss-forntend/backend/venv/bin/gunicorn --access-logfile - --workers 3 --bind 127.0.0.1:8000 backend.wsgi:application[0m
+             └─[0;38;5;245m903649 /var/www/ss-forntend/backend/venv/bin/python3 /var/www/ss-forntend/backend/venv/bin/gunicorn --access-logfile - --workers 3 --bind 127.0.0.1:8000 backend.wsgi:application[0m
+
+Sep 09 05:33:16 srv921349 gunicorn[903645]: [2025-09-09 05:33:16 +0000] [903645] [INFO] Starting gunicorn 23.0.0
+Sep 09 05:33:16 srv921349 gunicorn[903645]: [2025-09-09 05:33:16 +0000] [903645] [INFO] Listening at: http://127.0.0.1:8000 (903645)
+Sep 09 05:33:16 srv921349 gunicorn[903645]: [2025-09-09 05:33:16 +0000] [903645] [INFO] Using worker: sync
+Sep 09 05:33:16 srv921349 gunicorn[903647]: [2025-09-09 05:33:16 +0000] [903647] [INFO] Booting worker with pid: 903647
+Sep 09 05:33:16 srv921349 gunicorn[903648]: [2025-09-09 05:33:16 +0000] [903648] [INFO] Booting worker with pid: 903648
+Sep 09 05:33:16 srv921349 gunicorn[903649]: [2025-09-09 05:33:16 +0000] [903649] [INFO] Booting worker with pid: 903649
+Sep 09 05:33:18 srv921349 gunicorn[903649]: 127.0.0.1 - - [09/Sep/2025:11:33:18 +0600] "GET /api/admin/products/product/?q=opu HTTP/1.0" 200 19292 "https://shobshopping.com/api/admin/products/product/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0"
+Sep 09 05:33:18 srv921349 gunicorn[903649]: 127.0.0.1 - - [09/Sep/2025:11:33:18 +0600] "GET /api/admin/jsi18n/ HTTP/1.0" 200 3342 "https://shobshopping.com/api/admin/products/product/?q=opu" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0"
+Sep 09 05:33:21 srv921349 gunicorn[903648]: 127.0.0.1 - - [09/Sep/2025:11:33:21 +0600] "GET /api/admin/products/product/42/change/?_changelist_filters=q%3Dopu HTTP/1.0" 200 35766 "https://shobshopping.com/api/admin/products/product/?q=opu" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0"
+Sep 09 05:33:22 srv921349 gunicorn[903649]: 127.0.0.1 - - [09/Sep/2025:11:33:22 +0600] "GET /api/admin/jsi18n/ HTTP/1.0" 200 3342 "https://shobshopping.com/api/admin/products/product/42/change/?_changelist_filters=q%3Dopu" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0"

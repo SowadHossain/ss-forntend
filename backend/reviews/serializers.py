@@ -4,7 +4,8 @@ from rest_framework import serializers
 from .models import Review
 
 class ReviewSerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source='user.full_name', read_only=True)
+    user = serializers.CharField(source='user.name', read_only=True)  # Return name instead of ID
+    user_name = serializers.CharField(source='user.name', read_only=True)
     product_name = serializers.CharField(source='product.name', read_only=True)
 
     class Meta:
@@ -38,10 +39,13 @@ class ReviewSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        # Since 'user' field is now read-only and sourced from user.full_name,
+        # we need to set the actual user instance manually
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
+        # Don't allow changing product or user
         validated_data.pop('product', None)
-        validated_data.pop('user', None)
+        # No need to pop 'user' since it's now read-only
         return super().update(instance, validated_data)

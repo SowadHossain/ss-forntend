@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from backend.swagger import schema_view
-from rest_framework.permissions import AllowAny
+from backend.views import IpView
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -21,6 +21,8 @@ urlpatterns = [
     path('api/redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('api/onboarding/', include('onboarding.urls')),
     path('api/analytics/', include('analytics.urls')),  # ✅ moves outside /admin/
+    
+    path('api/ip/', IpView.as_view()),
 
 
 ] + (static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) if settings.DEBUG else [])

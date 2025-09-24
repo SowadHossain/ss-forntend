@@ -1,6 +1,21 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Product, Category, Tag
+from .models import Product, Category, Tag, ProductMedia
+
+
+class ProductMediaInline(admin.TabularInline):
+    model = ProductMedia
+    extra = 0
+    fields = ('media_type', 'file_path', 'url', 'order', 'media_preview')
+    readonly_fields = ('media_preview',)
+
+    def media_preview(self, obj):
+        if obj.media_type == 'IMAGE' and obj.file_path:
+            return format_html('<img src="/media/{}" width="100" height="100" />', obj.file_path)
+        elif obj.media_type == 'VIDEO' and obj.url:
+            return format_html('<a href="{}" target="_blank">🎥 Video Link</a>', obj.url)
+        return "(No media)"
+    media_preview.short_description = 'Preview'
 
 
 @admin.register(Product)
@@ -14,6 +29,7 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'seller', 'product_image')
     autocomplete_fields = ('category', 'tags')
     actions = ['approve_products', 'reject_products', 'activate_products', 'deactivate_products']
+    inlines = [ProductMediaInline]
 
     fieldsets = (
         (None, {
@@ -74,3 +90,11 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     search_fields = ('name',)
+
+
+@admin.register(ProductMedia)
+class ProductMediaAdmin(admin.ModelAdmin):
+    list_display = ('product', 'media_type', 'file_path', 'url', 'order', 'created_at')
+    list_filter = ('media_type', 'created_at')
+    search_fields = ('product__name',)
+    ordering = ['product', 'order', 'created_at']

@@ -72,3 +72,26 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ProductMedia(models.Model):
+    MEDIA_TYPE_CHOICES = [
+        ('IMAGE', 'Image'),
+        ('VIDEO', 'Video'),
+    ]
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='media')
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES)
+    file_path = models.CharField(max_length=500, null=True, blank=True)  # For images
+    url = models.URLField(max_length=500, null=True, blank=True)  # For video links
+    order = models.PositiveIntegerField(default=0)  # For ordering media
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        if self.media_type == 'IMAGE':
+            return f"{self.product.name} - Image {self.id}"
+        else:
+            return f"{self.product.name} - Video {self.id}"
