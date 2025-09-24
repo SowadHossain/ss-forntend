@@ -44,7 +44,7 @@ export default function ProductGrid({ products, viewMode }: ProductGridProps) {
       <div
         className={`grid gap-6 ${
           viewMode === "grid"
-            ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3"
+            ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4"
             : "grid-cols-2"
         }`}
       >

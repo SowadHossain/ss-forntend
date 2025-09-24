@@ -5,6 +5,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Separator } from "../components/ui/separator";
 
@@ -14,6 +21,7 @@ export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
@@ -123,6 +131,12 @@ export default function CheckoutPage() {
     } finally {
       setPlacing(false);
     }
+  };
+
+  const handleConfirmAndPlace = async () => {
+    // close dialog first, then run place order flow
+    setShowConfirm(false);
+    await placeOrder();
   };
 
   if (loading) {
@@ -235,7 +249,7 @@ export default function CheckoutPage() {
 
                 <div className="flex justify-between text-lg font-bold"><span>Total</span><span>BDT {total.toFixed(2)}</span></div>
 
-                <Button size="lg" className="w-full bg-red-600 hover:bg-red-700 text-white" onClick={placeOrder} disabled={placing}>
+                <Button size="lg" className="w-full bg-red-600 hover:bg-red-700 text-white" onClick={() => setShowConfirm(true)} disabled={placing}>
                   {placing ? "Placing order..." : "Place Order"}
                 </Button>
 
@@ -245,6 +259,28 @@ export default function CheckoutPage() {
                 </div>
               </CardContent>
             </Card>
+            {/* Confirmation dialog for placing order */}
+            <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Confirm your order</DialogTitle>
+                  <DialogDescription>Review the invoice below and confirm to place your order.</DialogDescription>
+                </DialogHeader>
+
+                <div className="mt-4 space-y-3">
+                  <div className="flex justify-between"><span className="text-sm text-gray-600">Items ({cartItems.length})</span><span className="font-medium">BDT {subtotal.toFixed(2)}</span></div>
+                  {savings > 0 && <div className="flex justify-between text-sm text-red-600"><span>Savings</span><span>- BDT {savings.toFixed(2)}</span></div>}
+                  <div className="flex justify-between text-sm"><span>Shipping</span><span>{shippingCost === 0 ? "Free" : `BDT ${shippingCost.toFixed(2)}`}</span></div>
+                  <div className="flex justify-between text-sm"><span>Tax</span><span>BDT {tax.toFixed(2)}</span></div>
+                  <div className="border-t pt-3 flex justify-between font-bold text-lg"><span>Total</span><span>BDT {total.toFixed(2)}</span></div>
+
+                  <div className="mt-4 grid gap-2 sm:flex sm:justify-end">
+                    <Button variant="ghost" onClick={() => setShowConfirm(false)}>Cancel</Button>
+                    <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={handleConfirmAndPlace} disabled={placing}>{placing ? "Placing order..." : "Confirm & Pay"}</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

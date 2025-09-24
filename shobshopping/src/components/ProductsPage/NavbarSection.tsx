@@ -280,8 +280,8 @@ export default function Navbar() {
             </button>
 
             <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-              <img src={logoPublic} alt="Logo" className="h-10 w-auto" />
-              <img src="/text_ss.png" alt="Site Name" className="hidden md:block lg:block h-6 w-auto rounded" />
+              <img src={logoPublic} alt="Logo" className="h-8 md:h-10 w-auto" />
+              <img src="/text_ss.png" alt="Site Name" className="block lg:block h-5 md:h-6 w-auto rounded" />
             </Link>
           </div>
 

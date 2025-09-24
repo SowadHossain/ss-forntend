@@ -1,7 +1,5 @@
-// src/components/HomePage/CategoryShowcaseSection.tsx
-
-import React from "react"
 import ProductCard from "../common/ProductCard"
+import { Card, CardContent } from "../ui/card"
 
 type Product = {
   id: number
@@ -29,17 +27,53 @@ export default function CategoryShowcaseSection({ title, products, link }: Categ
           <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
           {link && (
             <a href={link} className="text-blue-600 hover:underline text-sm">
-              Discover more
+              More
             </a>
           )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-          {products.map((product) => (
-            <div key={product.id}>
-              <ProductCard product={product} />
+          {products && products.length > 0 ? (
+            products.map((product) => (
+              <div key={product.id}>
+                {/* Ensure product has category in expected shape */}
+                <ProductCard
+                  product={{
+                    ...product,
+                    id: String(product.id),
+                    price: product.price,
+                    image: product.image,
+                    category: (product as any).category
+                      ? typeof (product as any).category === "string"
+                        ? { name: String((product as any).category) }
+                        : { name: String(((product as any).category as any).name ?? "") }
+                      : undefined,
+                  }}
+                />
+              </div>
+            ))
+          ) : (
+            <div className="col-span-2 sm:col-span-3 md:col-span-2 lg:col-span-2">
+              <Card className="h-full border-2 border-dashed border-gray-200 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <CardContent className="p-6 text-center">
+                  <div className="text-gray-300 mb-4 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-14 w-14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 2v6M5 12h14M5 12a7 7 0 1 0 14 0M12 2l4 4M12 2l-4 4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-800">Coming soon</h3>
+                  <p className="text-sm text-gray-600 mt-2">We're curating great products for this category — check back soon.</p>
+                  {link ? (
+                    <div className="mt-4">
+                      <a href={link} className="inline-block px-4 py-2 text-sm font-medium bg-red-600 text-white text-sm rounded-md hover:bg-red-700">
+                        Explore similar items
+                      </a>
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </section>

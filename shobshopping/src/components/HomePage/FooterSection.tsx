@@ -1,5 +1,5 @@
+import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone } from "lucide-react"
 import React from "react"
-import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, MapIcon, Lock, Zap, Linkedin } from "lucide-react"
 import { API } from "../../lib/api"
 
 export default function FooterSection() {
@@ -12,6 +12,12 @@ export default function FooterSection() {
 
     return categories
   }
+
+  // call the hook once and reuse the categories array
+  const categories = useCategories()
+  const splitIndex = Math.ceil(categories.length / 2)
+  const leftCats = categories.slice(0, splitIndex)
+  const rightCats = categories.slice(splitIndex)
 
   return (
     <footer className="bg-gradient-to-br from-red-50 via-white to-red-50 text-gray-700 border-t border-red-100">
@@ -31,7 +37,7 @@ export default function FooterSection() {
             <div className="space-y-3 text-sm">
               <div className="flex items-center space-x-3">
                 <Phone className="h-4 w-4 text-red-500" />
-                <span className="text-gray-700">1-800-SHOB-SHOP</span>
+                <span className="text-gray-700">+880 1323-768642</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-red-500" />
@@ -45,10 +51,10 @@ export default function FooterSection() {
           </div>
 
           {/* Shop Categories */}
-            <div>
+            {/* <div>
             <h3 className="font-semibold text-red-600 mb-4">Shop Categories</h3>
             <ul className="space-y-2 text-sm">
-              {useCategories().map(category => (
+              {leftCats.map(category => (
               <li key={category.id}>
                 <a
                 href={`/products?categories=${encodeURIComponent(category.name)}`}
@@ -59,10 +65,27 @@ export default function FooterSection() {
               </li>
               ))}
             </ul>
-            </div>
+            </div> */}
 
           {/* Customer Service */}
           <div>
+            {/* {rightCats && rightCats.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-semibold text-red-600 mb-2 text-sm">Categories</h4>
+                <ul className="space-y-2 text-sm">
+                  {rightCats.map(cat => (
+                    <li key={`right-${cat.id}`}>
+                      <a
+                        href={`/products?categories=${encodeURIComponent(cat.name)}`}
+                        className="text-gray-700 hover:text-red-600 transition-colors"
+                      >
+                        {cat.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )} */}
             <h3 className="font-semibold text-red-600 mb-4">Customer Service</h3>
             <ul className="space-y-2 text-sm">
               <li><a href="/buyer-dashboard?tab=support" className="text-gray-700 hover:text-red-600 transition-colors">Help Center</a></li>
@@ -81,6 +104,9 @@ export default function FooterSection() {
               <li><a href="/buyer-dashboard?tab=wishlist" className="text-gray-700 hover:text-red-600 transition-colors">Wishlist</a></li>
             </ul>
             
+          </div>
+
+          <div>
             <h4 className="font-semibold text-red-600 mb-3 text-sm">Legal</h4>
             <ul className="space-y-2 text-xs">
               <li><a href="/privacy" className="text-gray-600 hover:text-red-600 transition-colors">Privacy Policy</a></li>

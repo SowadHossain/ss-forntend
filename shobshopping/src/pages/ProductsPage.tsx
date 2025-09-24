@@ -13,6 +13,7 @@ import {
 } from "../components/ui/sheet";
 import { useCart } from "../context/CartContext";
 import { API } from "../lib/api";
+import { hasConsent, readCookie, setCookie } from "../lib/cookies";
 
 import FooterSection from "../components/HomePage/FooterSection";
 import BreadcrumbAndTags from "../components/ProductsPage/BreadcrumbAndTags";
@@ -20,6 +21,7 @@ import FilterSidebar from "../components/ProductsPage/FilterSidebar";
 import NavbarSection from "../components/ProductsPage/NavbarSection";
 import ProductGrid from "../components/ProductsPage/ProductGrid";
 import Pagination from "../components/common/Pagination";
+import SubNavbar from "../components/common/SubNavbar";
 
 interface Product {
   id: string;
@@ -51,7 +53,7 @@ export default function ProductsPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedSellers, setSelectedSellers] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const itemsPerPage = 12;
 
   // API data states
   const [categories, setCategories] = useState<Category[]>([]);
@@ -127,7 +129,7 @@ export default function ProductsPage() {
 
   // Initialize state from URL parameters (only after data loads)
   useEffect(() => {
-    if (loading || !isInitialMount.current) return;
+  if (loading || !isInitialMount.current) return;
 
     const query = searchParams.get("query") || "";
     const categories = parseList(searchParams.get("categories"));
@@ -142,12 +144,27 @@ export default function ProductsPage() {
     setSelectedCategories(categories);
     setSelectedSellers(sellers);
     setCurrentPage(page);
-    setViewMode(view);
+  // Respect cookie-stored preference if consent given, otherwise use URL param
+  const storedView = hasConsent() ? readCookie("products_view") : null;
+  setViewMode((storedView as "grid" | "list") || view);
     setSortBy(sort);
     setPriceRange([minPrice, maxPrice]);
 
     isInitialMount.current = false;
   }, [loading, searchParams]);
+
+  // Listen for cookie consent acceptance to restore saved preferences
+  useEffect(() => {
+    function onConsent() {
+      const storedView = readCookie("products_view") as "grid" | "list" | null;
+      const storedSort = readCookie("products_sort") || null;
+      if (storedView) setViewMode(storedView);
+      if (storedSort) setSortBy(storedSort);
+    }
+
+    window.addEventListener("cookie-consent-accepted", onConsent);
+    return () => window.removeEventListener("cookie-consent-accepted", onConsent);
+  }, []);
 
   // Sync state to URL (skip on initial mount)
   useEffect(() => {
@@ -173,6 +190,9 @@ export default function ProductsPage() {
   }, [searchQuery, selectedCategories, selectedSellers, priceRange, currentPage, viewMode, sortBy, searchParams, setSearchParams]);
 
   // Enhanced filtering and sorting logic
+  // Derive top-level categories (parent === null) for the sidebar
+  const topLevelCategories = categories.filter((c: any) => c?.parent === null || c?.parent === undefined)
+
   const processedProducts = products
     .map((product: Product) => {
       const price = parseFloat(product.price?.toString() || "0") || 0;
@@ -215,11 +235,29 @@ export default function ProductsPage() {
       // Search filter - require match if search query exists
       if (searchQuery.trim() && product._matchScore === 0) return false;
 
-      // Category filter
-      const matchesCategory = selectedCategories.length === 0 ||
-        selectedCategories.some(cat => 
-          (product.category?.name || "").toLowerCase().includes(cat.toLowerCase())
-        );
+      // Category filter: support nested category shapes where product.category may have id, parent, parent_name
+      const matchesCategory = selectedCategories.length === 0 || selectedCategories.some(selected => {
+        const prodCat = product.category || {}
+        const prodName = (prodCat.name || "").toString().toLowerCase()
+        const prodParentId = prodCat.parent
+        const prodParentName = (prodCat.parent_name || "").toString().toLowerCase()
+        const selectedLower = selected.toString().toLowerCase()
+
+        // Match by name
+        if (prodName && prodName.includes(selectedLower)) return true
+
+        // If selected is a numeric id string, match by id or parent id
+        if (!isNaN(Number(selected))) {
+          const selNum = Number(selected)
+          if (Number(prodCat.id) === selNum) return true
+          if (Number(prodParentId) === selNum) return true
+        }
+
+        // Match by parent_name
+        if (prodParentName && prodParentName.includes(selectedLower)) return true
+
+        return false
+      })
 
       // Seller filter
       const matchesSeller = selectedSellers.length === 0 ||
@@ -296,18 +334,20 @@ export default function ProductsPage() {
   };
 
   const handleSortChange = (newSort: string) => {
-    setSortBy(newSort);
+  setSortBy(newSort);
+  if (hasConsent()) setCookie("products_sort", newSort);
   };
 
   const handleViewModeChange = (mode: "grid" | "list") => {
-    setViewMode(mode);
+  setViewMode(mode);
+  if (hasConsent()) setCookie("products_view", mode);
   };
 
   // Generate active filter tags for display
   const activeFilterTags = [
     ...selectedCategories.map(cat => `Category: ${cat}`),
     ...selectedSellers.map(seller => `Seller: ${seller}`),
-    ...(priceRange[0] !== 0 || priceRange[1] !== 500 ? [`Price: $${priceRange[0]} - $${priceRange[1]}`] : []),
+  ...(priceRange[0] !== 0 || priceRange[1] !== 500 ? [`Price: BDT ${priceRange[0]} - BDT ${priceRange[1]}`] : []),
     ...(searchQuery.trim() ? [`Search: "${searchQuery.trim()}"`] : []),
   ];
 
@@ -392,6 +432,8 @@ export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-slate-50 overflow-x-hidden pt-20 lg:pt-0">
       <NavbarSection />
+
+      <SubNavbar />
       
       {/* Search Bar Section */}
       <div className="bg-white border-b border-slate-200">
@@ -434,7 +476,7 @@ export default function ProductsPage() {
           <FilterSidebar
             priceRange={priceRange}
             setPriceRange={(r: number[]) => setPriceRange([Number(r[0] ?? 0), Number(r[1] ?? 500)])}
-            categories={categories.map(cat => cat.name)}
+            categories={topLevelCategories.map((cat: any) => cat.name)}
             sellers={sellerOptions}
             selectedCategories={selectedCategories}
             selectedSellers={selectedSellers}
@@ -462,18 +504,17 @@ export default function ProductsPage() {
                   )}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 bg-white">
-                <SheetHeader>
-                  <SheetTitle className="text-gray-900">🎛️ Filters</SheetTitle>
-                  <SheetDescription className="text-gray-600">
-                    Refine your product search
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mt-6">
+              <SheetContent 
+                side="left" 
+                className="w-80 bg-white overflow-y-auto max-h-screen"
+              >
+                <div className="mt-16 pb-6">
                   <FilterSidebar
                     priceRange={priceRange}
-                    setPriceRange={(r: number[]) => setPriceRange([Number(r[0] ?? 0), Number(r[1] ?? 500)])}
-                    categories={categories.map(cat => cat.name)}
+                    setPriceRange={(r: number[]) =>
+                      setPriceRange([Number(r[0] ?? 0), Number(r[1] ?? 500)])
+                    }
+                    categories={topLevelCategories.map((cat: any) => cat.name)}
                     sellers={sellerOptions}
                     selectedCategories={selectedCategories}
                     selectedSellers={selectedSellers}

@@ -4,15 +4,16 @@ import { Link } from "react-router-dom";
 import "../assets/logo.png"; // Adjust the path as necessary to your logo image
 import { useCart } from "../context/CartContext";
 import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
+    NavigationMenu,
+    NavigationMenuContent,
+    NavigationMenuItem,
+    NavigationMenuLink,
+    NavigationMenuList,
+    NavigationMenuTrigger,
 } from "./ui/navigation-menu";
   
 import { API } from "../lib/api";
+import { hasConsent, setCookie } from "../lib/cookies";
 
 export default function Navbar() {
   const [profile, setProfile] = useState<any>(null);
@@ -57,16 +58,16 @@ export default function Navbar() {
               </NavigationMenuTrigger>
               <NavigationMenuContent style={{ position: 'absolute', left: 0, top: '100%', marginTop: '0.5rem', background: 'white', border: '1px solid #e5e7eb', borderRadius: '0.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', minWidth: '160px', zIndex: 100 }}>
                 <NavigationMenuLink asChild>
-                  <Link to="/categories/electronics" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Electronics</Link>
+                  <Link to="/categories/electronics" onClick={() => { if (hasConsent()) setCookie('last_category','electronics') }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Electronics</Link>
                 </NavigationMenuLink>
                 <NavigationMenuLink asChild>
-                  <Link to="/categories/fashion" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Fashion</Link>
+                  <Link to="/categories/fashion" onClick={() => { if (hasConsent()) setCookie('last_category','fashion') }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Fashion</Link>
                 </NavigationMenuLink>
                 <NavigationMenuLink asChild>
-                  <Link to="/categories/home" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Home</Link>
+                  <Link to="/categories/home" onClick={() => { if (hasConsent()) setCookie('last_category','home') }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Home</Link>
                 </NavigationMenuLink>
                 <NavigationMenuLink asChild>
-                  <Link to="/categories/sports" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sports</Link>
+                  <Link to="/categories/sports" onClick={() => { if (hasConsent()) setCookie('last_category','sports') }} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sports</Link>
                 </NavigationMenuLink>
               </NavigationMenuContent>
             </NavigationMenuItem>

@@ -149,7 +149,6 @@ export default function FilterSidebar({
 
       <div className="p-5 space-y-6">
         {/* Price Range */}
-        {/* Price Range */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-800 flex items-center gap-2">

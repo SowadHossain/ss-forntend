@@ -264,8 +264,11 @@ export default function Navbar() {
   }, [profile])
 
   return (
+    // <header
+    //   className="fixed lg:sticky top-0 left-0 right-0 z-[9999] w-full backdrop-blur-sm bg-gradient-to-br from-red-100 to-red-50 border-b border-red-100 shadow-sm text-gray-700"
+    // >
     <header
-      className="fixed lg:sticky top-0 left-0 right-0 z-[9999] w-full backdrop-blur-sm bg-gradient-to-br from-red-50 via-white to-red-50 border-b border-red-100 shadow-sm text-gray-700"
+      className="fixed lg:sticky top-0 left-0 right-0 z-[9999] w-full backdrop-blur-sm bg-white border-b border-red-100 shadow-sm text-gray-700"
     >
       {/* Main Navigation Row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -273,7 +276,7 @@ export default function Navbar() {
           {/* Left: Mobile menu + Logo */}
           <div className="flex items-center space-x-3">
             <button
-              className="lg:hidden p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+              className="lg:hidden p-2 text-gray-600 hover:text-red-600 rounded-md transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle mobile menu"
             >
@@ -281,8 +284,8 @@ export default function Navbar() {
             </button>
 
             <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-              <img src={logoPublic} alt="Logo" className="h-10 w-auto" />
-              <img src="/text_ss.png" alt="Site Name" className="hidden md:block lg:block h-6 w-auto rounded" />
+              <img src={logoPublic} alt="Logo" className="h-8 md:h-10 w-auto" />
+              <img src="/text_ss.png" alt="Site Name" className="block lg:block h-5 md:h-6 w-auto rounded" />
             </Link>
           </div>
 
@@ -292,10 +295,10 @@ export default function Navbar() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
               <Input
                 type="text"
-                placeholder="Search for products..."
+                placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-12 py-2.5 w-full border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-white rounded-lg"
+                className="pl-10 pr-12 py-2.5 w-full border-[#cf2633] focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-white rounded-lg"
                 onFocus={() => { if (suggestions.length) setShowSuggestions(true) }}
               />
               <button
@@ -306,7 +309,7 @@ export default function Navbar() {
               </button>
 
               {/* Suggestions dropdown (desktop) */}
-              {showSuggestions && (
+              {/* {showSuggestions && (
                 <div ref={suggestionsRef} className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                   {loadingSuggestions ? (
                     <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
@@ -315,9 +318,9 @@ export default function Navbar() {
                       <button
                         key={p.id}
                         onClick={() => {
-                          setShowSuggestions(false)
-                          setSearchQuery(p.name || p.title || "")
-                          setMobileOpen(false)
+                          // setShowSuggestions(false)
+                          // setSearchQuery(p.name || p.title || "")
+                          // setMobileOpen(false)
                           navigate(`/products/${p.id}`)
                         }}
                         className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm text-gray-700"
@@ -330,7 +333,7 @@ export default function Navbar() {
                     <div className="px-4 py-3 text-sm text-gray-500">No results</div>
                   )}
                 </div>
-              )}
+              )} */}
             </form>
           </div>
 
@@ -498,7 +501,7 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Search Bar */}
-      <div className="lg:hidden border-t border-gray-100 bg-white/90 backdrop-blur-sm">
+      <div className="lg:hidden border-t border-gray-100 bg-red-50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <form onSubmit={handleSearch} className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
@@ -508,17 +511,16 @@ export default function Navbar() {
               value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => { if (suggestions.length) setShowSuggestions(true) }}
-              className="pl-10 pr-20 py-2.5 w-full border-gray-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-white rounded-lg"
+              className="pl-10 pr-20 py-2.5 w-full border-[#cf2633] focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-white rounded-lg"
             />
             <button
               type="submit"
-              className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#cf2633] text-white text-sm rounded-md transition-colors hover:cursor-pointer"
             >
               Search
             </button>
 
-                {/* Suggestions (mobile) */}
-                {showSuggestions && (
+                {/* {showSuggestions && (
                   <div ref={suggestionsRef} className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                     {loadingSuggestions ? (
                       <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
@@ -542,7 +544,7 @@ export default function Navbar() {
                       <div className="px-4 py-3 text-sm text-gray-500">No results</div>
                     )}
                   </div>
-                )}
+                )} */}
           </form>
         </div>
       </div>
@@ -550,6 +552,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="lg:hidden bg-white border-t border-gray-200 shadow-lg">
+        {/* <div className="lg:hidden bg-gradient-to-r from-red-50 via-white to-red-50 border-t border-gray-200 shadow-lg"> */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             {/* Navigation Links */}
             <nav className="space-y-2">

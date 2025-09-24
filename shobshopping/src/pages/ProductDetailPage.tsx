@@ -220,10 +220,52 @@ export default function ProductDetailPage() {
 
   const p = product || ({} as ProductType);
   // Normalize fields returned by the API to convenient local variables
-  const categoryName = typeof p.category === "string" ? p.category : p.category?.name || "";
-  const images: string[] = (p.images && p.images.length) ? (p.images as string[]) : (
+  // Product API may return a nested category with parent id and parent_name.
+  // Build a normalized category object with helpful fallbacks.
+  const rawCategory: any = typeof p.category === 'string' ? { name: p.category } : (p.category || null);
+  const normalizedCategory = {
+    id: rawCategory?.id ?? undefined,
+    name: rawCategory?.name ?? '',
+    parentId: rawCategory?.parent ?? null,
+    parentName: rawCategory?.parent_name ?? null,
+  };
+
+  // Choose a display category for breadcrumb/badge/links.
+  // Prefer parentName when present (so link goes to parent/top-level category),
+  // otherwise use the category name.
+  const categoryName = normalizedCategory.parentName || normalizedCategory.name || '';
+  // Build a unified media list that includes images and media entries (images/videos)
+  type MediaItem = { type: 'IMAGE' | 'VIDEO'; url: string };
+  const rawImages: string[] = (p.images && (p.images as any).length) ? (p.images as string[]) : (
     p.image ? [p.image as string] : (p.image_url ? [p.image_url as string] : [])
   );
+
+  const productMedia = (p as any).media || (p as any).media_items || [];
+  const mediaItems: MediaItem[] = [];
+
+  // Add raw image strings first (preserve existing order)
+  for (const img of rawImages) {
+    if (img) mediaItems.push({ type: 'IMAGE', url: img });
+  }
+
+  // Add explicit media objects from API (they may be images or videos)
+  if (Array.isArray(productMedia)) {
+    for (const m of productMedia) {
+      const mt = (m.media_type || m.type || '').toString().toUpperCase();
+      const url = m.media_url || m.url || m.file_path || m.filePath || '';
+      if (!url) continue;
+      if (mt === 'VIDEO' || mt === 'YOUTUBE' || /youtu/.test(url)) {
+        mediaItems.push({ type: 'VIDEO', url: url });
+      } else {
+        mediaItems.push({ type: 'IMAGE', url: url });
+      }
+    }
+  }
+
+  // Fallback placeholder if nothing available
+  if (mediaItems.length === 0) {
+    mediaItems.push({ type: 'IMAGE', url: '/placeholder.svg?height=500&width=500' });
+  }
   const price = p.price !== undefined ? Number(p.price) : undefined;
   const originalPrice = (p as any).original_price ?? p.originalPrice ?? undefined;
   const stockQuantity = Number((p as any).stock_quantity ?? p.stockCount ?? 0);
@@ -302,7 +344,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Breadcrumb */}
-          <nav className="flex items-center space-x-2 text-sm text-gray-700 mb-8">
+          <nav className="md:flex items-center space-x-2 text-sm text-gray-700 mb-8 hidden">
             <Link to="/" className="hover:text-blue-600">Home</Link>
             <span>/</span>
             <Link to="/products" className="hover:text-blue-600">Products</Link>
@@ -312,34 +354,97 @@ export default function ProductDetailPage() {
             <span className="text-gray-900">{p.name}</span>
           </nav>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Product Images */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-12 md:pt-0">
+            {/* Product Images / Media Slider */}
             <div>
               <div className="mb-4">
                 <div className="w-full aspect-square overflow-hidden rounded-lg border border-gray-200 bg-white flex items-center justify-center relative">
-                  {/* Blurred background fill using the same image */}
-                  <div
-                    className="absolute inset-0 rounded-lg overflow-hidden"
-                    aria-hidden
-                  >
+                  {/* Blurred background fill using the same image/video thumbnail */}
+                  <div className="absolute inset-0 rounded-lg overflow-hidden" aria-hidden>
                     <div
-                      style={{ backgroundImage: `url(${images[selectedImage] || "/placeholder.svg?height=500&width=500"})` }}
+                      style={{ backgroundImage: `url(${mediaItems[selectedImage]?.url || '/placeholder.svg?height=500&width=500'})` }}
                       className="w-full h-full bg-center bg-cover filter blur-2xl scale-105"
                     />
                     <div className="absolute inset-0 bg-white/30" />
                   </div>
 
-                  <img
-                    src={images[selectedImage] || "/placeholder.svg?height=500&width=500"}
-                    alt={p.name}
-                    className="relative z-10 max-w-full max-h-full object-contain"
-                  />
+                  {/* Prev/Next controls */}
+                  <button
+                    aria-label="previous"
+                    onClick={() => setSelectedImage((s) => Math.max(0, s - 1))}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 rounded-full p-1 hover:scale-105"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    aria-label="next"
+                    onClick={() => setSelectedImage((s) => Math.min(mediaItems.length - 1, s + 1))}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/80 rounded-full p-1 hover:scale-105"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+
+                  {/* Main media display: image or video embed */}
+                  <div className="relative z-10 w-full h-full flex items-center justify-center">
+                    {mediaItems[selectedImage]?.type === 'VIDEO' ? (
+                      (() => {
+                        const url = mediaItems[selectedImage].url;
+                        // Try to extract YouTube id
+                        const ytMatch = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{6,})/);
+                        const videoId = ytMatch ? ytMatch[1] : null;
+                        const embedSrc = videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+                        return (
+                          <iframe
+                            title={p.name || 'product-video'}
+                            src={embedSrc}
+                            className="w-full h-full"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        );
+                      })()
+                    ) : (
+                      <img
+                        src={mediaItems[selectedImage]?.url || '/placeholder.svg?height=500&width=500'}
+                        alt={p.name}
+                        className="relative z-10 max-w-full max-h-full object-contain"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
+
               <div className="grid grid-cols-4 gap-2">
-                {images.map((image, index) => (
-                  <button key={index} onClick={() => setSelectedImage(index)} className={`border-2 rounded-lg overflow-hidden transition ${selectedImage === index ? "border-blue-500" : "border-gray-200"}`}>
-                      <img src={image} alt={`${p.name} ${index + 1}`} className="w-full h-20 object-cover" />
+                {mediaItems.map((m, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImage(index)}
+                    className={`border-2 rounded-lg overflow-hidden transition ${selectedImage === index ? 'border-blue-500' : 'border-gray-200'}`}>
+                    {m.type === 'VIDEO' ? (
+                      <div className="relative w-full h-20 bg-gray-100">
+                        {/* use YouTube thumbnail if possible */}
+                        {(() => {
+                          const url = m.url;
+                          const ytMatch = url.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{6,})/);
+                          const id = ytMatch ? ytMatch[1] : null;
+                          const thumb = id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : undefined;
+                          return (
+                            <>
+                              <img src={thumb || url} alt={`video ${index + 1}`} className="w-full h-20 object-cover" />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <svg className="w-10 h-10 text-white/90" viewBox="0 0 24 24" fill="none">
+                                  <circle cx="12" cy="12" r="12" fill="rgba(0,0,0,0.5)" />
+                                  <path d="M10 8l6 4-6 4V8z" fill="white" />
+                                </svg>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <img src={m.url} alt={`${p.name} ${index + 1}`} className="w-full h-20 object-cover" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -349,7 +454,7 @@ export default function ProductDetailPage() {
             <div>
               {/* Title & Rating */}
               <div className="mb-4">
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#cd2733] mb-2">{p.name}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#cf2633] mb-2">{p.name}</h1>
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
@@ -368,7 +473,7 @@ export default function ProductDetailPage() {
                   {originalPrice && (
                     <>
                       <span className="text-xl text-gray-500 line-through">BDT {originalPrice}</span>
-                      <Badge className="bg-red-500">Save BDT {(Number(originalPrice) - Number(price) || 0).toFixed(2)}</Badge>
+                      <Badge className="bg-red-500">Save {(price && originalPrice ? (((Number(originalPrice) - Number(price)) / Number(originalPrice)) * 100).toFixed(0) + '%' : '')}</Badge>
                     </>
                   )}
                 </div>
@@ -395,11 +500,9 @@ export default function ProductDetailPage() {
                         {/* Seller rating/totalSales not provided by product API; omit if missing */}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Link to={`/buyer-dashboard?tab=support`} className="flex items-center">
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Support Ticket
-                      </Link>
+                    <Button variant="outline" size="sm" onClick={() => navigate('/buyer-dashboard?tab=support')}>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Support Ticket
                     </Button>
                   </div>
                 </CardContent>
@@ -449,7 +552,7 @@ export default function ProductDetailPage() {
 
               {/* Action Buttons */}
               <div className="space-y-4 mb-6">
-                <Button size="lg" onClick={handleAddToCart} disabled={stockQuantity === 0 || addLoading || added} className="w-full bg-gradient-to-r from-[#cd2733] to-purple-600 text-white hover:opacity-90 disabled:opacity-50">
+                <Button size="lg" onClick={handleAddToCart} disabled={stockQuantity === 0 || addLoading || added} className="w-full bg-red-600 text-white text-sm rounded-md hover:bg-red-700 hover:opacity-90 disabled:opacity-50">
                   {added ? (
                     "Added!"
                   ) : addLoading ? (
@@ -491,25 +594,25 @@ export default function ProductDetailPage() {
               {/* Features */}
               <div className="grid grid-cols-3 gap-4 text-center text-sm pt-6">
                 <div className="flex flex-col items-center">
-                  <MapIcon className="w-6 h-6 text-blue-600 mb-2" />
+                  <MapIcon className="w-6 h-6 text-[#cf2633] mb-2" />
                   <span>Nationwide Shipping</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <Bolt className="w-6 h-6 text-blue-600 mb-2" />
+                  <Bolt className="w-6 h-6 text-[#cf2633] mb-2" />
                   <span>Lightning-Fast Delivery</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <Lock className="w-6 h-6 text-blue-600 mb-2" />
+                  <Lock className="w-6 h-6 text-[#cf2633] mb-2" />
                   <span>100% Secure Checkout</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
         {/* Reviews Section (improved layout) */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Left: reviews list */}
             <div className="flex-1">
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -517,7 +620,6 @@ export default function ProductDetailPage() {
                   <p className="text-sm text-gray-600">Read feedback from verified buyers</p>
                 </div>
                 <div className="text-right">
-                  {/* average rating */}
                   {(() => {
                     const list = reviewsList || [];
                     const avg = list.length ? (list.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / list.length) : rating || 0;
@@ -574,7 +676,6 @@ export default function ProductDetailPage() {
                           ))}
                         </div>
 
-                        {/* Pagination controls */}
                         <div className="mt-4 flex items-center justify-between">
                           <div className="text-sm text-gray-600">Showing {start + 1}–{Math.min(end, total)} of {total} reviews</div>
                           <div className="flex items-center space-x-2">
@@ -583,7 +684,7 @@ export default function ProductDetailPage() {
                               disabled={page <= 1}
                               className={`px-3 py-1 rounded-md border ${page <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
                             ><ChevronLeft /></button>
-                            {/* page numbers */}
+
                             <div className="hidden sm:flex items-center space-x-1">
                               {Array.from({ length: totalPages }).map((_, i) => {
                                 const num = i + 1;
@@ -608,7 +709,6 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Right: write review card */}
             <aside className="w-full lg:w-96">
               <Card className="sticky top-20 p-4">
                 <CardContent>
@@ -631,7 +731,7 @@ export default function ProductDetailPage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Comment</label>
                       <textarea
-                      ref={(el) => { /* keep for future focus */ }}
+                      ref={(el) => {}}
                       value={commentInput}
                       onChange={(e) => setCommentInput(e.target.value)}
                       rows={5}
@@ -679,10 +779,14 @@ export default function ProductDetailPage() {
               </Card>
             </aside>
           </div>
-        </div>
+        </div> */}
       </div>
 
       <FooterSection />
+
+      {/* Chat widget — passes current product context for smarter answers */}
+      {/* <ChatWidget product={{ id: p.id, name: p.name, price, stockQuantity, seller: sellerName }} /> */}
+      
     </div>
   );
 }

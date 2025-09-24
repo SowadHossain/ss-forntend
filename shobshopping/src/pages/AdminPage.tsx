@@ -1,11 +1,36 @@
-import React from "react"  
+import {
+  Activity,
+  Ban,
+  BarChart3,
+  Bell,
+  Calendar,
+  Check,
+  Clock,
+  DollarSign,
+  Download,
+  Eye,
+  Filter,
+  Mail,
+  MapPin,
+  MessageSquare,
+  Phone,
+  RefreshCw,
+  Search,
+  Settings,
+  Shield,
+  ShoppingCart,
+  Star,
+  TrendingUp,
+  User,
+  UserCheck,
+  Users,
+  X,
+  Zap,
+} from "lucide-react"
 import { useState } from "react"
-import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table"
+import { Button } from "../components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -14,39 +39,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
+import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
-import { Switch } from "../components/ui/switch"
 import { Progress } from "../components/ui/progress"
-import {
-  Users,
-  DollarSign,
-  TrendingUp,
-  Eye,
-  Check,
-  X,
-  MessageSquare,
-  Settings,
-  BarChart3,
-  Activity,
-  Shield,
-  Ban,
-  UserCheck,
-  Star,
-  ShoppingCart,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Clock,
-  Filter,
-  Search,
-  Download,
-  RefreshCw,
-  Bell,
-  Zap,
-  User,
-} from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
+import { Switch } from "../components/ui/switch"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 
 // Mock Data
 const mockProducts = [
@@ -306,7 +305,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Total Revenue 💰</p>
-                      <p className="text-2xl font-bold text-gray-900">${mockAnalytics.totalRevenue.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-gray-900">{String(mockAnalytics.totalRevenue).startsWith("BDT") ? mockAnalytics.totalRevenue : `BDT ${mockAnalytics.totalRevenue.toLocaleString()}`}</p>
                       <p className="text-xs text-green-600 flex items-center mt-1">
                         <TrendingUp className="w-3 h-3 mr-1" />+{mockAnalytics.revenueGrowth}% from last month
                       </p>
@@ -502,7 +501,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="font-medium text-gray-800">${product.price}</TableCell>
+                        <TableCell className="font-medium text-gray-800">{product.price && product.price.toString().startsWith("BDT") ? product.price : `BDT ${product.price}`}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="bg-gray-100 text-gray-700">
                             {product.category}
@@ -553,7 +552,7 @@ export default function AdminDashboard() {
                                         </div>
                                         <div>
                                           <Label className="text-gray-700">Price</Label>
-                                          <p className="text-gray-800 font-bold text-lg">${selectedProduct.price}</p>
+                                          <p className="text-gray-800 font-bold text-lg">{selectedProduct.price && selectedProduct.price.toString().startsWith("BDT") ? selectedProduct.price : `BDT ${selectedProduct.price}`}</p>
                                         </div>
                                       </div>
                                     </div>
@@ -914,7 +913,7 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell className="text-gray-600">{user.joinDate}</TableCell>
                         <TableCell className="text-gray-800">{user.totalOrders}</TableCell>
-                        <TableCell className="font-medium text-gray-800">${user.totalSpent.toLocaleString()}</TableCell>
+                        <TableCell className="font-medium text-gray-800">{String(user.totalSpent).startsWith("BDT") ? user.totalSpent : `BDT ${user.totalSpent.toLocaleString()}`}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Dialog>
@@ -1011,7 +1010,7 @@ export default function AdminDashboard() {
                                             <div className="flex justify-between">
                                               <span className="text-gray-600">Total Spent:</span>
                                               <span className="font-medium text-gray-800">
-                                                ${selectedUser.totalSpent.toLocaleString()}
+                                                {String(selectedUser.totalSpent).startsWith("BDT") ? selectedUser.totalSpent : `BDT ${selectedUser.totalSpent.toLocaleString()}`}
                                               </span>
                                             </div>
                                             <div className="flex justify-between">

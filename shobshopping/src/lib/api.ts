@@ -13,8 +13,10 @@ const api = axios.create({
 
 // Attach token on each request if available
 api.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem("accessToken");
+  // Follow project convention: prefer sessionStorage, fallback to localStorage
+  const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
   if (token) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -24,7 +26,36 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error.response?.data?.detail || "API request failed";
+    const status = error.response?.status;
+    const data = error.response?.data;
+
+    // If backend reports token is not valid / expired for access token, clear stored tokens
+    try {
+      const isTokenNotValid = data?.code === "token_not_valid";
+      const hasExpiredMessage = Array.isArray(data?.messages) && data.messages.some((m: any) => {
+        return (m?.token_class === "AccessToken" || m?.token_type === "access") && /expired/i.test(m?.message || "");
+      });
+
+      if (status === 401 && (isTokenNotValid || hasExpiredMessage)) {
+        // Remove tokens from both sessionStorage and localStorage
+        try {
+          sessionStorage.removeItem("accessToken");
+          sessionStorage.removeItem("refreshtoken");
+        } catch (e) {
+          // ignore
+        }
+        try {
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshtoken");
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (e) {
+      // non-blocking
+    }
+
+    const message = data?.detail || "API request failed";
     return Promise.reject(new Error(message));
   }
 );
@@ -115,6 +146,9 @@ export const API = {
   updateProduct: (id: number, data: any) => api.put(`/products/${id}/`, data).then(res => res.data),
   partialUpdateProduct: (id: number, data: any) => api.patch(`/products/${id}/`, data).then(res => res.data),
   deleteProduct: (id: number) => api.delete(`/products/${id}/`).then(res => res.data),
+
+  // Add media (images as data URIs and video links) to a product
+  addProductMedia: (id: number, data: any) => api.post(`/products/${id}/add_media/`, data).then(res => res.data),
 
   getSellerProducts: (search?: string) => api.get("/seller/products/", { params: search ? { search } : {} }).then(res => res.data),
 

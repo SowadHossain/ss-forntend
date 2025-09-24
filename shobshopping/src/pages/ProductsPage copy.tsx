@@ -1,23 +1,21 @@
-import React from "react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
-  Search,
   Filter,
   Grid,
-  List,
-  Star,
-  ShoppingCart,
   Heart,
+  List,
+  Search,
+  ShoppingCart,
+  Star,
 } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
 import { Checkbox } from "../components/ui/checkbox";
+import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Slider } from "../components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -33,6 +31,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../components/ui/sheet";
+import { Slider } from "../components/ui/slider";
 
 const products = [
   {
@@ -167,8 +166,8 @@ export default function ProductsPage() {
           className="mb-2"
         />
         <div className="flex justify-between text-sm text-gray-500">
-          <span>${priceRange[0]}</span>
-          <span>${priceRange[1]}</span>
+        <span>BDT {priceRange[0]}</span>
+        <span>BDT {priceRange[1]}</span>
         </div>
       </div>
 
@@ -306,11 +305,11 @@ export default function ProductsPage() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <span className="text-lg font-bold text-gray-900">
-              ${product.price}
+              {product.price && product.price.toString().startsWith("BDT") ? product.price : `BDT ${product.price}`}
             </span>
             {product.originalPrice && (
               <span className="text-sm text-gray-400 line-through ml-2">
-                ${product.originalPrice}
+                {product.originalPrice && product.originalPrice.toString().startsWith("BDT") ? product.originalPrice : `BDT ${product.originalPrice}`}
               </span>
             )}
           </div>

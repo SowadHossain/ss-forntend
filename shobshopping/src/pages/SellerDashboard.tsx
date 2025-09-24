@@ -12,13 +12,14 @@ import {
   Star,
   TrendingUp,
   Upload
-} from "lucide-react"
-import React, { useEffect, useRef, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
-import { Badge } from "../components/ui/badge"
-import { Button } from "../components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import EditProductContentsDialog from "../components/EditProductContentsDialog";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -26,15 +27,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../components/ui/dialog"
-import { Input } from "../components/ui/input"
-import { Label } from "../components/ui/label"
-import { Progress } from "../components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
-import { Textarea } from "../components/ui/textarea"
-import { API } from "../lib/api"
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Progress } from "../components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Textarea } from "../components/ui/textarea";
+import { API } from "../lib/api";
 
 const mockAnalytics = {
   totalRevenue: 46128.76,
@@ -45,140 +46,57 @@ const mockAnalytics = {
   avgRating: 4.8,
   conversionRate: 3.2,
   conversionGrowth: 2.1,
-}
+};
 
 export default function SellerDashboard() {
-  const navigate = useNavigate()
-  // Orders state
-  const [orders, setOrders] = useState<any[]>([])
-  const [loadingOrders, setLoadingOrders] = useState(false)
-  const [ordersError, setOrdersError] = useState<string | null>(null)
-  const [showMenu, setShowMenu] = useState(false)
-  const menuRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    document.addEventListener("touchstart", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-      document.removeEventListener("touchstart", handleClickOutside)
-    }
-  }, [])
-
-  // Close menu on Escape
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowMenu(false)
-    }
-    document.addEventListener("keydown", onKey)
-    return () => document.removeEventListener("keydown", onKey)
-  }, [])
-
-  useEffect(() => {
-    setLoadingOrders(true)
-    API.getOrders()
-      .then((data) => {
-        setOrders(data.results || data)
-        setOrdersError(null)
-      })
-      .catch((err) => {
-        setOrdersError(err.message || "Failed to fetch orders")
-      })
-      .finally(() => setLoadingOrders(false))
-  }, [])
-
-  function handleLogout() {
-    try {
-      sessionStorage.removeItem("accessToken")
-      localStorage.removeItem("accessToken")
-      sessionStorage.removeItem("refreshtoken");
-    } catch {}
-    setShowMenu(false)
-    navigate("/login")
-    // Optional: If backend supports logout endpoint
-    // API.logout?.().catch(() => {})
-  }
-
+  const navigate = useNavigate();
   const [profile, setProfile] = useState({
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-      role: "",
-      avatar: "/placeholder.svg?height=100&width=100",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    role: "",
+    avatar: "/placeholder.svg?height=100&width=100",
   });
-  const [loadingProfile, setLoadingProfile] = useState(true)
-
-  useEffect(() => {
-    let mounted = true;
-    const loadProfile = async () => {
-      const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken")
-      if (token) {
-        try {
-          const data = await API.getProfile()
-          if (!mounted) return;
-          const name =
-            data?.name ||
-            [data?.first_name, data?.last_name].filter(Boolean).join(" ") ||
-            data?.user?.name ||
-            data?.user?.full_name ||
-            data?.username ||
-            (data?.email ? String(data.email).split("@")[0] : "User");
-          const email = data?.email || data?.user?.email || "";
-          const phone = data?.phone || data?.user?.phone || "";
-          const address = data?.address || data?.user?.address || "";
-          const avatar = data?.avatar || data?.user?.avatar || "/placeholder.svg?height=100&width=100";
-          const role = data?.role || data?.user?.role || "buyer";
-          setProfile({ name, email, phone, address, avatar, role });
-        } catch (error) {
-          console.error("Failed to load profile:", error)
-          setProfile({
-            name: "",
-            email: "",
-            phone: "",
-            address: "",
-            role: "",
-            avatar: "/placeholder.svg?height=100&width=100",
-          })
-        }
-      }
-      setLoadingProfile(false)
-    }
-    loadProfile()
-  }, [])
-
-  // Products state
-  const [products, setProducts] = useState<any[]>([])
-  const [loadingProducts, setLoadingProducts] = useState(false)
-  const [productsError, setProductsError] = useState<string | null>(null)
-  const [selectedProduct, setSelectedProduct] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState("overview")
-  const [showAddProduct, setShowAddProduct] = useState(false)
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [products, setProducts] = useState<any[]>([]);
+  const [productsError, setProductsError] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
     price: "",
+  original_price: "",
     stock_quantity: "",
     category_id: "",
     tag_ids: [] as number[],
     image: ""
-  })
+  });
+  const [categories, setCategories] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(false)
+  const [showMenu, setShowMenu] = useState(false);
 
-  // Categories and tags state
-  const [categories, setCategories] = useState<any[]>([])
-  const [tags, setTags] = useState<any[]>([])
+  const menuRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    API.getCategories().then((data) => setCategories(data.results || data)).catch(() => {})
+    API.getProfile()
+      .then((data) => setProfile(data))
+      .catch(() => {})
+      .finally(() => setLoadingProfile(false))
+
+    API.getCategories()
+      .then((data) => {
+        const items = data.results || data;
+        const filtered = Array.isArray(items) ? items.filter((c: any) => c.parent === null) : [];
+        setCategories(filtered);
+      })
+      .catch(() => {});
     API.getTags().then((data) => setTags(data.results || data)).catch(() => {})
-  }, [])
 
-  useEffect(() => {
     setLoadingProducts(true)
     API.getSellerProducts()
       .then((data) => {
@@ -189,7 +107,22 @@ export default function SellerDashboard() {
         setProductsError(err.message || "Failed to fetch products")
       })
       .finally(() => setLoadingProducts(false))
+
+    // Fetch orders from API
+    API.getOrders()
+      .then((data) => setOrders(data.results || data))
+      .catch(() => setOrders([]));
   }, [])
+
+  function handleLogout() {
+    try {
+      sessionStorage.removeItem("accessToken");
+      localStorage.removeItem("accessToken");
+      sessionStorage.removeItem("refreshtoken");
+    } catch {}
+    setShowMenu(false);
+    navigate("/login");
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -223,7 +156,9 @@ export default function SellerDashboard() {
       const payload = {
         name: newProduct.name,
         description: newProduct.description,
+        // price here is the discounted price
         price: parseFloat(newProduct.price),
+        original_price: newProduct.original_price ? parseFloat(newProduct.original_price) : undefined,
         stock_quantity: parseInt(newProduct.stock_quantity),
         category_id: parseInt(newProduct.category_id),
         tag_ids: newProduct.tag_ids,
@@ -233,33 +168,11 @@ export default function SellerDashboard() {
       const created = await API.createProduct(payload)
       setProducts((prev) => [created, ...prev])
       setShowAddProduct(false)
-      setNewProduct({ name: "", description: "", price: "", stock_quantity: "", category_id: "", tag_ids: [], image: "" })
+      setNewProduct({ name: "", description: "", price: "", original_price: "", stock_quantity: "", category_id: "", tag_ids: [], image: "" })
     } catch (err) {
       alert(err.message || "Failed to add product")
     }
   }
-
-  // const handleAddProduct = async (e: React.FormEvent) => {
-  //   e.preventDefault()
-  //   try {
-  //     const formData = new FormData()
-  //     formData.append("name", newProduct.name)
-  //     formData.append("description", newProduct.description)
-  //     formData.append("price", newProduct.price)
-  //     formData.append("stock_quantity", newProduct.stock_quantity)
-  //     formData.append("category_id", newProduct.category_id)
-  //     newProduct.tag_ids.forEach((tagId) => formData.append("tag_ids[]", String(tagId)))
-  //     if (newProduct.images.length > 0) {
-  //       formData.append("image", newProduct.images[0]) // Only one image
-  //     }
-  //     const created = await API.createProduct(formData)
-  //     setProducts((prev) => [created, ...prev])
-  //     setShowAddProduct(false)
-  //     setNewProduct({ name: "", description: "", price: "", stock_quantity: "", category_id: "", tag_ids: [], images: [] })
-  //   } catch (err) {
-  //     alert(err.message || "Failed to add product")
-  //   }
-  // }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -275,43 +188,83 @@ export default function SellerDashboard() {
     }
   }
   
-  // function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-  //   const file = e.target.files?.[0];
-  //   if (file) {
-  //     setNewProduct((prev) => ({
-  //       ...prev,
-  //       images: [file], // Store as File object
-  //     }));
-  //   }
-  // }
-
-  // function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-  //   const file = e.target.files?.[0];
-  //   if (file) {
-  //     setNewProduct((prev) => ({
-  //       ...prev,
-  //       images: [file],
-  //     }));
-  //   }
-  // }
-
-  // async function handleFileUpload(e: React.FormEvent) {
-  //   e.preventDefault();
-  //   if (!newProduct.images) return;
-
-  //   const formData = new FormData();
-  //   formData.append("file", newProduct.images);
-  //   // Add other fields if needed
-
-  //   // Replace with your API endpoint
-  //   await fetch("/upload", {
-  //     method: "POST",
-  //     body: formData,
-  //   });
-  // }
-
   const userRole = (profile?.role || "").toString().toLowerCase()
   const isSeller = userRole === "seller"
+
+  // Component to handle adding stock (only increase allowed)
+  function StockUpdater({ product, onUpdated }: { product: any; onUpdated?: (p: any) => void }) {
+    const [addAmount, setAddAmount] = useState<string>("")
+    const [loadingAdd, setLoadingAdd] = useState(false)
+
+    const handleAddStock = async (e: React.FormEvent) => {
+      e.preventDefault()
+      const amt = parseInt(addAmount)
+      if (isNaN(amt) || amt <= 0) {
+        alert("Please enter a positive number to increase stock")
+        return
+      }
+      setLoadingAdd(true)
+      try {
+        const newStock = (product.stock_quantity || 0) + amt
+        // Build a payload that includes required fields to satisfy servers that expect full object on update
+        const payload: any = {
+          stock_quantity: newStock,
+          name: product.name,
+        }
+
+        // Ensure price is passed as a number when possible
+        if (product.price !== undefined && product.price !== null) {
+          const p = typeof product.price === 'number' ? product.price : parseFloat(String(product.price).replace(/[^0-9.-]/g, ''))
+          if (!isNaN(p)) payload.price = p
+        }
+
+        // Try to determine category id from product object
+        if (product.category && product.category.id) {
+          payload.category_id = product.category.id
+        } else if (product.category_id) {
+          const cid = typeof product.category_id === 'number' ? product.category_id : parseInt(String(product.category_id))
+          if (!isNaN(cid)) payload.category_id = cid
+        }
+
+        // Assumption: API.updateProduct exists and returns the updated product
+        const updated = await API.updateProduct(product.id, payload)
+        onUpdated && onUpdated(updated)
+        setAddAmount("")
+      } catch (err: any) {
+        alert(err?.message || "Failed to update stock")
+      } finally {
+        setLoadingAdd(false)
+      }
+    }
+
+    return (
+      <div className="border-t border-gray-100 pt-4">
+        <form onSubmit={handleAddStock} className="flex items-center space-x-2">
+          <div className="flex-1">
+            <Label className="text-gray-700">Increase Stock</Label>
+            <Input
+              type="number"
+              min={1}
+              value={addAmount}
+              onChange={(e) => setAddAmount(e.target.value)}
+              placeholder="Enter amount to add"
+              className="bg-white border-gray-200 focus:border-green-500 focus:ring-green-500"
+            />
+            <p className="text-xs text-gray-500 mt-1">Only positive values allowed — stock can only be increased here, not decreased.</p>
+          </div>
+          <div className="w-36">
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white"
+              disabled={loadingAdd}
+            >
+              {loadingAdd ? "Updating..." : "Add Stock"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    )
+  }
 
   // If profile is loading show a simple loader
   if (loadingProfile) {
@@ -579,9 +532,9 @@ export default function SellerDashboard() {
                     required
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label className="text-gray-700">Price (BDT) *</Label>
+                    <Label className="text-gray-700">Discounted Price (BDT) *</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -591,7 +544,22 @@ export default function SellerDashboard() {
                       className="bg-white border-gray-200 focus:border-green-500 focus:ring-green-500"
                       required
                     />
+                    <p className="text-xs text-gray-500 mt-1">This is the discounted price shown to customers.</p>
                   </div>
+
+                  <div>
+                    <Label className="text-gray-700">Original Price (BDT)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newProduct.original_price}
+                      onChange={(e) => setNewProduct({ ...newProduct, original_price: e.target.value })}
+                      placeholder="0.00"
+                      className="bg-white border-gray-200 focus:border-green-500 focus:ring-green-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Optional — the non-discounted price for comparison.</p>
+                  </div>
+
                   <div>
                     <Label className="text-gray-700">Stock Quantity *</Label>
                     <Input
@@ -709,7 +677,7 @@ export default function SellerDashboard() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-gray-800">${order.total}</p>
+                          <p className="font-bold text-gray-800">{order.total && order.total.toString().startsWith("BDT") ? order.total : `BDT ${order.total}`}</p>
                           <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
                         </div>
                       </div>
@@ -751,7 +719,7 @@ export default function SellerDashboard() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-green-600">${mockAnalytics.totalRevenue.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-green-600">{String(mockAnalytics.totalRevenue).startsWith("BDT") ? mockAnalytics.totalRevenue : `BDT ${mockAnalytics.totalRevenue.toLocaleString()}`}</p>
                     <p className="text-sm text-gray-600">Total Revenue</p>
                   </div>
                   <div className="text-center">
@@ -827,7 +795,7 @@ export default function SellerDashboard() {
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="font-medium text-gray-800">${product.price}</TableCell>
+                            <TableCell className="font-medium text-gray-800">{product.price && product.price.toString().startsWith("BDT") ? product.price : `BDT ${product.price}`}</TableCell>
                             <TableCell>
                               <span
                                 className={`font-medium ${product.stock_quantity === 0 ? "text-red-600" : product.stock_quantity < 10 ? "text-yellow-600" : "text-green-600"}`}
@@ -839,7 +807,7 @@ export default function SellerDashboard() {
                               <Badge className={getStatusColor(product.moderation_status)}>{product.moderation_status}</Badge>
                             </TableCell>
                             <TableCell className="text-gray-800">{product.sales || 0}</TableCell>
-                            <TableCell className="font-medium text-gray-800">${(product.revenue || 0).toLocaleString()}</TableCell>
+                            <TableCell className="font-medium text-gray-800">{String((product.revenue || 0)).startsWith("BDT") ? (product.revenue || 0) : `BDT ${(product.revenue || 0).toLocaleString()}`}</TableCell>
                             <TableCell>
                               <div className="flex items-center space-x-1">
                                 <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -860,7 +828,7 @@ export default function SellerDashboard() {
                                       <Eye className="w-4 h-4" />
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="max-w-2xl bg-white">
+                                  <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl bg-white p-2 sm:p-6 overflow-y-auto max-h-[90vh]">
                                     <DialogHeader>
                                       <DialogTitle className="text-gray-800">
                                         Product Details: {selectedProduct?.name}
@@ -889,6 +857,13 @@ export default function SellerDashboard() {
                                               </Badge>
                                             </div>
                                           </div>
+                                          <Badge
+                                            variant="outline"
+                                            className="bg-gray-50 text-gray-500 px-2 py-1 hover:cursor-pointer hover:bg-gray-100"
+                                            onClick={() => window.open(`/products/${selectedProduct.id}`, "_blank")}
+                                          >
+                                            Visit Product
+                                          </Badge>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
@@ -899,7 +874,7 @@ export default function SellerDashboard() {
                                                 <div className="flex justify-between">
                                                   <span className="text-gray-600">Price:</span>
                                                   <span className="font-medium text-gray-800">
-                                                    ${selectedProduct.price}
+                                                    {selectedProduct.price && selectedProduct.price.toString().startsWith("BDT") ? selectedProduct.price : `BDT ${selectedProduct.price}`}
                                                   </span>
                                                 </div>
                                                 <div className="flex justify-between">
@@ -925,7 +900,7 @@ export default function SellerDashboard() {
                                                 <div className="flex justify-between">
                                                   <span className="text-gray-600">Revenue:</span>
                                                   <span className="font-medium text-gray-800">
-                                                    ${(selectedProduct.revenue || 0).toLocaleString()}
+                                                    {String((selectedProduct.revenue || 0)).startsWith("BDT") ? (selectedProduct.revenue || 0) : `BDT ${(selectedProduct.revenue || 0).toLocaleString()}`}
                                                   </span>
                                                 </div>
                                                 <div className="flex justify-between">
@@ -944,6 +919,11 @@ export default function SellerDashboard() {
                                             </div>
                                           </div>
                                         </div>
+                                        {/* Stock updater — allow increasing stock only */}
+                                        <StockUpdater product={selectedProduct} onUpdated={(updated) => {
+                                          setProducts((prev) => prev.map((p) => p.id === updated.id ? updated : p))
+                                          setSelectedProduct(updated)
+                                        }} />
                                       </div>
                                     )}
                                   </DialogContent>
@@ -951,6 +931,22 @@ export default function SellerDashboard() {
                                 {/* <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
                                   <Edit className="w-4 h-4" />
                                 </Button> */}
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-green-600">
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-lg w-full">
+                                      <DialogHeader>
+                                        <DialogTitle>Edit Product Contents</DialogTitle>
+                                        <DialogDescription>Add images and YouTube video links</DialogDescription>
+                                      </DialogHeader>
+                                      <EditProductContentsDialog product={product} onUpdated={(updated) => {
+                                        setProducts((prev) => prev.map((p) => p.id === updated.id ? updated : p));
+                                      }} />
+                                    </DialogContent>
+                                  </Dialog>
                                 {/* <Button variant="ghost" size="sm" className="text-gray-600 hover:text-red-600">
                                   <Trash2 className="w-4 h-4" />
                                 </Button> */}
@@ -969,7 +965,7 @@ export default function SellerDashboard() {
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-800">Order Management 🛒</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Order Management <ShoppingCart className="inline-block" /></h2>
               <div className="flex items-center space-x-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -1010,14 +1006,13 @@ export default function SellerDashboard() {
                         {orders.map((order) => (
                           <TableRow key={order.id} className="border-gray-200">
                             <TableCell className="font-mono text-sm text-gray-800">{order.id}</TableCell>
-                            <TableCell className="font-medium text-gray-800">{order.customer}</TableCell>
-                            <TableCell className="text-gray-800">{order.product}</TableCell>
-                            <TableCell className="text-gray-800">{order.quantity}</TableCell>
-                            <TableCell className="font-medium text-gray-800">${order.total}</TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
-                            </TableCell>
-                            <TableCell className="text-gray-600">{order.date}</TableCell>
+                            <TableCell className="font-medium text-gray-800">{order.user}</TableCell>
+                            <TableCell className="text-gray-800">{order.status}</TableCell>
+                            <TableCell className="text-gray-800">{order.payment_status}</TableCell>
+                            <TableCell className="text-gray-800">{order.shipping_address}</TableCell>
+                            <TableCell className="text-gray-600">{order.created_at}</TableCell>
+                            <TableCell className="text-gray-600">{order.updated_at}</TableCell>
+                            <TableCell className="text-gray-800">{order.items.map(item => item.product_name).join(', ')}</TableCell>
                             <TableCell>
                               <div className="flex items-center space-x-2">
                                 <Button
@@ -1156,7 +1151,7 @@ export default function SellerDashboard() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-gray-800">${(product.revenue || 0).toLocaleString()}</p>
+                            <p className="font-bold text-gray-800">{String((product.revenue || 0)).startsWith("BDT") ? (product.revenue || 0) : `BDT ${(product.revenue || 0).toLocaleString()}`}</p>
                             <div className="flex items-center space-x-1">
                               <Star className="w-3 h-3 text-yellow-400 fill-current" />
                               <span className="text-sm text-gray-600">{product.rating}</span>

@@ -5,6 +5,7 @@ import FooterSection from "../components/HomePage/FooterSection"
 import HeroSection from "../components/HomePage/HeroSection"
 import NavbarSection from "../components/HomePage/NavbarSection"
 
+import FeaturedCategories from "../components/HomePage/FeaturedCategories"
 import { API } from "../lib/api"
 
 export default function HomePage() {
@@ -13,11 +14,25 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Helper to parse price into a number. Handles strings like "1,234.56", "$1,234", or numeric types.
+  const parsePrice = (p: any) => {
+    if (p === null || p === undefined) return 0
+    if (typeof p === "number") return p
+    const s = String(p)
+      // remove common currency symbols and spaces
+      .replace(/[^0-9.,-]/g, "")
+      // remove thousand-separators (commas)
+      .replace(/,/g, "")
+    const n = parseFloat(s)
+    return Number.isFinite(n) ? n : 0
+  }
+
   useEffect(() => {
     setLoading(true)
     Promise.all([API.getCategories(), API.getProducts()])
       .then(([catRes, prodRes]) => {
-        const prodList = prodRes?.results || prodRes || []
+        // Normalize product list from API response (preserve API order for featured products)
+        const prodList: any[] = prodRes?.results || prodRes || []
         const catList = Array.isArray(catRes) ? catRes : (catRes?.results || [])
         setProducts(prodList)
         setCategories(catList)
@@ -51,14 +66,24 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen pt-28 lg:pt-0 bg-gradient-to-br from-slate-50 via-white to-[#cd2733]/10">
+    <div className="min-h-screen pt-20 lg:pt-0 bg-gradient-to-br from-slate-50 via-white to-[#cd2733]/10">
       <NavbarSection />
+      
       <HeroSection />
 
-      <FeaturedProductsSection products={products.slice(0, 10)} />
+      {/* <div className="bg-gradient-to-br from-red-400 via-red-400 to-red-400"> */}
+      <div className="bg-[#890707]">
+        <FeaturedCategories />
+      </div>
+
+      {/* <div className="border-t-4 border-red-50"></div> */}
+
+      <FeaturedProductsSection products={products} />
 
       {/* Show a few category showcases derived from API categories */}
-      {categories.slice(0, 3).map((category: any, index: number) => {
+      {categories
+        .filter((category: any) => category?.parent === null)
+        .map((category: any, index: number) => {
         // Match products by category name when available
         // Determine number of products to show based on device width
         const getShowcaseCount = () => {
@@ -72,16 +97,45 @@ export default function HomePage() {
 
         const showcaseCount = getShowcaseCount()
 
+        // Helper to check if a product's category belongs to the current (top-level) category.
+        const productMatchesCategory = (prodCat: any, topCategory: any) => {
+          if (!prodCat) return false
+
+          // If category is a simple string, compare by name
+          if (typeof prodCat === "string") {
+            return prodCat.toString().toLowerCase() === String(topCategory?.name || topCategory?.title || "").toLowerCase()
+          }
+
+          // prodCat is an object. Match by multiple possible relations:
+          // - exact id match
+          // - prodCat.parent equals topCategory.id (child -> parent link)
+          // - prodCat.parent_name equals topCategory.name
+          // - fallback: prodCat.name equals topCategory.name
+          const topId = topCategory?.id
+          const topName = String(topCategory?.name || topCategory?.title || "").toLowerCase()
+
+          if (prodCat.id && topId && prodCat.id === topId) return true
+          if (prodCat.parent !== undefined && topId !== undefined && prodCat.parent === topId) return true
+          if (prodCat.parent_name && prodCat.parent_name.toString().toLowerCase() === topName) return true
+          if (prodCat.name && prodCat.name.toString().toLowerCase() === topName) return true
+
+          return false
+        }
+
         const categoryProducts = products
-          .filter((p) => {
-            const prodCatName = p.category?.name || (typeof p.category === "string" ? p.category : "")
-            const catName = category?.name || category?.title || ""
-            return prodCatName && catName && prodCatName.toString().toLowerCase() === catName.toString().toLowerCase()
-          })
+          .filter((p) => productMatchesCategory(p.category, category))
+          // sort only for this category showcase by price descending
+          .sort((a: any, b: any) => parsePrice(b?.price) - parsePrice(a?.price))
           .slice(0, showcaseCount)
           .map((p) => ({
             id: p.id,
             name: p.name,
+            // normalize category shape for ProductCard
+            category: p.category
+              ? typeof p.category === "string"
+                ? { name: String(p.category) }
+                : { name: String((p.category as any).name ?? "") }
+              : undefined,
             price: parseFloat((p.price || "0").toString()) || 0,
             image: p.image || "/placeholder.svg",
             seller: p.seller || "Unknown",
@@ -90,12 +144,15 @@ export default function HomePage() {
             reviews: parseFloat((p.reviews || "0").toString()) || 0,
           }))
 
-        return (
+        // Don't render a showcase for categories with zero matched products
+        // if (!categoryProducts || categoryProducts.length === 0) return null
+
+      return (
           <CategoryShowcaseSection
-            key={index}
+            key={category?.id || index}
             title={`Popular in ${category?.name || category?.title || "Category"}`}
             products={categoryProducts}
-            link={`/categories/${encodeURIComponent((category?.name || category?.title || "").toLowerCase().replace(/\s+/g, "-"))}`}
+            link={`/products?categories=${encodeURIComponent((category?.name || category?.title || ""))}`}
           />
         )
       })}

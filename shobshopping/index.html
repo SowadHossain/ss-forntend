@@ -1,13 +1,57 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="src/assets/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ShobShopping</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Shob Shopping — a diverse online store for electronics, fashion, home, baby, and more. Discover curated products at great prices." />
+  <meta name="keywords"
+    content="Shob Shopping, ShobShopping, online store, shopping, electronics, fashion, home, baby, toys, accessories" />
+  <meta name="author" content="Shob Shopping" />
+  <meta name="theme-color" content="#ffffff" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:site_name" content="Shob Shopping" />
+  <meta property="og:title" content="Shob Shopping — Shop electronics, fashion, home & more" />
+  <meta property="og:description"
+    content="Shob Shopping — a diverse online store for electronics, fashion, home, baby, and more. Discover curated products at great prices." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/" />
+  <meta property="og:image" content="/logo.png" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Shob Shopping — Shop electronics, fashion, home & more" />
+  <meta name="twitter:description"
+    content="Shob Shopping — a diverse online store for electronics, fashion, home, baby, and more." />
+  <meta name="twitter:image" content="/logo.png" />
+
+  <link rel="canonical" href="/" />
+  <title>Shob Shopping</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+
+  <!-- Structured data (basic Website schema) -->
+  <script type="application/ld+json">
+    {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Shob Shopping",
+  "alternateName": "ShobShopping",
+  "url": "/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "/?s={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

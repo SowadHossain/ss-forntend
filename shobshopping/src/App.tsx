@@ -58,7 +58,7 @@ export default function App() {
               <div>
             &copy; 2025 ShobShopping, Inc. All rights reserved.
               </div>
-              <div className="flex items-center space-x-6 mt-2 md:mt-0">
+              <div className="hidden lg:flex items-center space-x-6 mt-2 md:mt-0">
                 <span className="flex items-center gap-2 text-green-600 font-medium">
                   <MapIcon size={18} strokeWidth={2} /> Nationwide shipping
                 </span>

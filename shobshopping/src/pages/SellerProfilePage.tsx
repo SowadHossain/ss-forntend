@@ -1,12 +1,11 @@
-import React from "react"
+import { Award, Calendar, Heart, MapPin, MessageCircle, ShoppingCart, Star } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { Star, MapPin, Calendar, Award, MessageCircle, Heart, ShoppingCart } from "lucide-react"
 
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
+import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
-import { Badge } from "../components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 
 const seller = {
@@ -274,9 +273,9 @@ export default function SellerStorefront() {
 
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <span className="text-lg font-bold text-gray-900">${product.price}</span>
+                        <span className="text-lg font-bold text-gray-900">{product.price && product.price.toString().startsWith("BDT") ? product.price : `BDT ${product.price}`}</span>
                         {product.originalPrice && (
-                          <span className="text-sm text-gray-500 line-through ml-2">${product.originalPrice}</span>
+                          <span className="text-sm text-gray-500 line-through ml-2">{product.originalPrice && product.originalPrice.toString().startsWith("BDT") ? product.originalPrice : `BDT ${product.originalPrice}`}</span>
                         )}
                       </div>
                       <span className={`text-sm ${product.inStock ? "text-green-600" : "text-red-600"}`}>

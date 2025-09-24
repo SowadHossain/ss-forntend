@@ -294,10 +294,10 @@ export default function CartPage() {
                   <Link to="/checkout">Proceed to Checkout</Link>
                 </Button>
 
-                <div className="text-center text-sm text-gray-600">
-                  <p>Free shipping on orders over $50</p>
+                {/* <div className="text-center text-sm text-gray-600">
+                  <p>Free shipping on orders over BDT 50</p>
                   <p>30-day return policy</p>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           </div>

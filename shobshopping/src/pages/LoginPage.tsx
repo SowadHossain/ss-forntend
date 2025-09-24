@@ -2,7 +2,7 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
-  Eye, EyeOff, Lock, Mail, Star, Store, User
+  Eye, EyeOff, Lock, Mail, Star, User
 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
@@ -51,7 +51,6 @@ export default function AuthPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    userType: "buyer",
     terms: false,
   })
 
@@ -132,7 +131,7 @@ export default function AuthPage() {
       name: registerData.name,
       email: registerData.email,
       password: registerData.password,
-      role: registerData.userType === "seller" ? "SELLER" : "BUYER",
+      role: "BUYER",
     }
 
     try {
@@ -188,7 +187,7 @@ export default function AuthPage() {
         <div className="w-full max-w-md mx-auto">
           <Card className="border-gray-200 shadow-xl bg-white/80 backdrop-blur-sm">
             <CardHeader className="text-center pb-2">
-              <div className="lg:hidden flex items-center justify-center space-x-2 mb-4">
+              <div className="lg:hidden flex items-center justify-center space-x-2 mb-4 hover:cursor-pointer" onClick={() => (window.location.href = "/")}>
                 <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-lg" />
                 <span className="text-xl font-bold text-[#cd2733]">ShobShopping</span>
               </div>
@@ -294,27 +293,7 @@ export default function AuthPage() {
                       </div>
                     </div>
 
-                    <div>
-                      <Label className="text-gray-700">Account Type</Label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button
-                          type="button"
-                          variant={registerData.userType === "buyer" ? "default" : "outline"}
-                          onClick={() => setRegisterData({ ...registerData, userType: "buyer" })}
-                          className={`w-full ${registerData.userType === "buyer" ? "bg-gradient-to-r from-red-500 to-red-600 text-white" : ""}`}
-                        >
-                          <User className="w-4 h-4 mr-2" /> Buyer
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={registerData.userType === "seller" ? "default" : "outline"}
-                          onClick={() => setRegisterData({ ...registerData, userType: "seller" })}
-                          className={`w-full ${registerData.userType === "seller" ? "bg-gradient-to-r from-red-500 to-red-600 text-white" : ""}`}
-                        >
-                          <Store className="w-4 h-4 mr-2" /> Seller
-                        </Button>
-                      </div>
-                    </div>
+                    {/* Account type removed - registrations are buyers by default */}
 
                     <div>
                       <Label>Password</Label>

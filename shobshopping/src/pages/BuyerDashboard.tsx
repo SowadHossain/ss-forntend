@@ -324,6 +324,59 @@ export default function BuyerDashboard() {
       });
   };
 
+  // Add types
+  interface Ticket {
+    id: number;
+    subject: string;
+    status: string;
+    orderId?: string;
+    // ...other fields as needed
+  }
+  interface TicketMessage {
+    id: number;
+    ticket: number;
+    sender?: string;
+    message: string;
+    attachment?: string | null;
+    sent_at?: string;
+  }
+
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [showMessageDialog, setShowMessageDialog] = useState(false);
+
+  const handleViewDetails = async (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setShowMessageDialog(true);
+    setLoadingMessages(true);
+    try {
+      const messages = await API.getSupportMessages(`ticket=${ticket.id}`);
+      setTicketMessages(messages);
+    } catch (e) {
+      setTicketMessages([]);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedTicket) return;
+    setSendingMessage(true);
+    try {
+      await API.createSupportMessage({ ticket: selectedTicket.id, message: newMessage });
+      const messages = await API.getSupportMessages(`ticket=${selectedTicket.id}`);
+      setTicketMessages(messages);
+      setNewMessage("");
+    } catch (e) {
+      // handle error
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -577,7 +630,7 @@ export default function BuyerDashboard() {
                                     </div>
                                     <div className="text-right">
                                       <p className="text-sm text-gray-600">Total Amount</p>
-                                      <p className="text-xl font-bold text-gray-800">${selectedOrder.total}</p>
+                                      <p className="text-xl font-bold text-gray-800">{selectedOrder.total && selectedOrder.total.toString().startsWith("BDT") ? selectedOrder.total : `BDT ${selectedOrder.total}`}</p>
                                     </div>
                                   </div>
 
@@ -598,7 +651,7 @@ export default function BuyerDashboard() {
                                             <p className="font-medium text-gray-800">{product.name}</p>
                                             <p className="text-sm text-gray-600">Sold by {selectedOrder.seller}</p>
                                           </div>
-                                          <p className="font-bold text-gray-800">${product.price}</p>
+                                          <p className="font-bold text-gray-800">{product.price && product.price.toString().startsWith("BDT") ? product.price : `BDT ${product.price}`}</p>
                                         </div>
                                       ))}
                                     </div>
@@ -665,10 +718,10 @@ export default function BuyerDashboard() {
                   const inStock = typeof product?.stock_quantity === "number" ? product.stock_quantity > 0 : (product?.inStock ?? true);
 
                   return (
-                    <Card key={item.id ?? product?.id} className="border-gray-200 bg-white hover:shadow-lg transition-shadow hover:cursor-pointer" onClick={() => window.location.href = `/product/${product?.id || ""}`}>
+                    <Card key={item.id ?? product?.id} className="border-gray-200 bg-white hover:shadow-lg transition-shadow hover:cursor-pointer">
                       <CardContent className="p-0">
                         <div className="relative">
-                          <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-white flex items-center justify-center relative">
+                          <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-white flex items-center justify-center relative" onClick={() => navigate(`/products/${product?.id || ""}`)}>
                             {/* Blurred background using same image for a nicer look */}
                             <div className="absolute inset-0 rounded-t-lg overflow-hidden" aria-hidden>
                               <div
@@ -851,7 +904,7 @@ export default function BuyerDashboard() {
                           <SelectContent className="bg-white">
                             {orders.map((order) => (
                               <SelectItem key={order.id} value={String(order.id)}>
-                                {order.id} - ${order.total}
+                                {order.id} - {order.total && order.total.toString().startsWith("BDT") ? order.total : `BDT ${order.total}`}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -870,12 +923,9 @@ export default function BuyerDashboard() {
                             <SelectValue placeholder="Select issue type" />
                           </SelectTrigger>
                           <SelectContent className="bg-white">
-                            <SelectItem value="order">Order Issue</SelectItem>
-                            <SelectItem value="product">Product Quality</SelectItem>
-                            <SelectItem value="shipping">Shipping Problem</SelectItem>
-                            <SelectItem value="payment">Payment Issue</SelectItem>
-                            <SelectItem value="account">Account Problem</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="ISSUE">Issue</SelectItem>
+                            <SelectItem value="CHANGE">Change</SelectItem>
+                            <SelectItem value="OTHER">Other</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -943,14 +993,14 @@ export default function BuyerDashboard() {
                               Ticket {ticket.id} • Created {ticket.createdAt}
                             </p>
                           </div>
-                          <Badge className={getStatusColor(ticket.status)}>{ticket.status}</Badge>
-                          <Badge className={getPriorityColor(ticket.priority)}>{ticket.priority} priority</Badge>
+                          <Badge className={getStatusColor(ticket.status.toLowerCase())}>{ticket.status}</Badge>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Button
                             variant="outline"
                             size="sm"
                             className="border-gray-200 text-gray-700 hover:bg-gray-50 bg-transparent"
+                            onClick={() => handleViewDetails(ticket)}
                           >
                             <MessageSquare className="w-4 h-4 mr-2" />
                             View Details
@@ -1164,6 +1214,51 @@ export default function BuyerDashboard() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {showMessageDialog && selectedTicket && (
+          <Dialog open={showMessageDialog} onOpenChange={setShowMessageDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Support Ticket #{selectedTicket.id}</DialogTitle>
+                <DialogDescription>{selectedTicket.subject}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {loadingMessages ? (
+                  <p>Loading messages...</p>
+                ) : (
+                  ticketMessages.length === 0 ? (
+                    <p>No messages yet.</p>
+                  ) : (
+                    ticketMessages.map((msg) => (
+                      <div key={msg.id} className="border-b pb-2 mb-2">
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>From: {msg.sender || "Unknown"}</span>
+                          <span>{msg.sent_at ? new Date(msg.sent_at).toLocaleString() : ""}</span>
+                        </div>
+                        <div className="mt-1 text-gray-800">{msg.message}</div>
+                        {msg.attachment && (
+                          <a href={msg.attachment} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs">Attachment</a>
+                        )}
+                      </div>
+                    ))
+                  )
+                )}
+              </div>
+              <div className="mt-4 flex space-x-2">
+                <Textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1"
+                  minLength={1}
+                />
+                <Button onClick={handleSendMessage} disabled={sendingMessage || !newMessage.trim()}>
+                  {sendingMessage ? "Sending..." : "Send"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   );

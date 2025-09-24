@@ -1,192 +1,205 @@
-import React, { useRef, useEffect } from "react"
-import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "../../components/ui/carousel"
+import { Shield, Truck } from "lucide-react"
+import React, { useEffect, useRef } from "react"
 import { mockAds } from "../../lib/mock/mockAds"
-import { Link } from "react-router-dom"
-import { ArrowRight, Star, Shield, Truck } from "lucide-react"
+
+// Static banners data
+const staticBanners = [
+  {
+    id: 1,
+    title: "Free Shipping",
+    subtitle: "On orders over $50",
+    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=200&fit=crop",
+    icon: Truck,
+    color: "from-blue-500 to-blue-600"
+  },
+  {
+    id: 2,
+    title: "Premium Support",
+    subtitle: "24/7 Customer Care",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop",
+    icon: Shield,
+    color: "from-green-500 to-green-600"
+  }
+]
 
 export default function HeroSection() {
-  const carouselApiRef = useRef<any>(null)
-  
+  const carouselRef = useRef(null)
+  const [currentSlide, setCurrentSlide] = React.useState(0)
+  // store interval id so we can reset it on user interaction
+  const intervalRef = useRef<number | null>(null)
+  const AUTO_SLIDE_MS = 5000
+
+  const startAutoSlide = () => {
+    // clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+    }
+    intervalRef.current = window.setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % mockAds.length)
+    }, AUTO_SLIDE_MS)
+  }
+
+  const resetAutoSlide = () => {
+    // restart the timer so auto-advance waits full period after user action
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+    startAutoSlide()
+  }
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (carouselApiRef.current && typeof carouselApiRef.current.scrollNext === "function") {
-        carouselApiRef.current.scrollNext()
+    startAutoSlide()
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
       }
-    }, 5000) // Slower transition for better UX
-    return () => clearInterval(interval)
+    }
   }, [])
 
+  const goToSlide = (index) => {
+  setCurrentSlide(index)
+  resetAutoSlide()
+  }
+
+  const nextSlide = () => {
+  setCurrentSlide(prev => (prev + 1) % mockAds.length)
+  resetAutoSlide()
+  }
+
+  const prevSlide = () => {
+  setCurrentSlide(prev => (prev - 1 + mockAds.length) % mockAds.length)
+  resetAutoSlide()
+  }
+
   return (
-    <section className="relative py-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-red-50 via-white to-red-50">
+    <section className="pt-20 relative py-6 md:py-10 px-4 sm:px-6 lg:px-8 md:bg-gradient-to-br md:from-red-50 md:via-white md:to-red-50">
       <div className="max-w-7xl mx-auto">
-        {/* Trust Indicators */}
-        <div className="flex flex-wrap justify-center items-center gap-6 mb-8 text-sm text-gray-600">
-          <div className="flex items-center space-x-2">
-            <Shield className="h-4 w-4 text-red-500" />
-            <span>Secure Shopping</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Truck className="h-4 w-4 text-red-500" />
-            <span>Free Shipping</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Star className="h-4 w-4 text-red-500" />
-            <span>4.8+ Rating</span>
-          </div>
-          <div className="text-red-600 font-medium">
-            🔥 Limited Time Offers
-          </div>
-        </div>
+        {/* Desktop: 2 columns (bigger + smaller with 2 rows) */}
+        {/* Mobile: 1 column, 2 rows */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto lg:h-[500px]">
+          
+          {/* Main Carousel - Desktop: spans 2 columns, Mobile: full width */}
+          <div className="lg:col-span-2 relative">
+            <div className="relative w-full h-48 sm:h-64 lg:h-full bg-white rounded-3xl shadow-xl overflow-hidden border border-red-100 hover:shadow-2xl transition-all duration-500">
+              {/* Carousel Images */}
+              <div className="relative w-full h-full overflow-hidden">
+                {mockAds.map((ad, index) => (
+                  <div
+                    key={ad.id}
+                    className={`absolute inset-0 transition-transform duration-700 ease-in-out ${
+                      index === currentSlide ? 'translate-x-0' : 
+                      index < currentSlide ? '-translate-x-full' : 'translate-x-full'
+                    }`}
+                  >
+                    <img
+                      src={ad.image}
+                      alt={ad.title}
+                      className="w-full h-full object-cover"
+                    />
 
-        {/* Main Carousel */}
-        <div className="relative">
-          <Carousel 
-            className="w-full" 
-            setApi={api => (carouselApiRef.current = api)}
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-          >
-            <CarouselContent>
-              {mockAds.map((ad, index) => (
-                <CarouselItem key={ad.id} className="flex items-stretch">
-                  <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col lg:flex-row w-full border border-red-100 hover:shadow-2xl transition-all duration-500">
-                    {/* Image Section */}
-                    <div className="lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
-                      <img
-                        src={ad.image}
-                        alt={ad.title}
-                        className="w-full h-64 lg:h-full object-cover hover:scale-105 transition-transform duration-700"
-                      />
-                      {/* Overlay Badge */}
-                      <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                        FEATURED
-                      </div>
-                      {index === 0 && (
-                        <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
-                          50% OFF 🔥
-                        </div>
-                      )}
-                      {index === 1 && (
-                        <div className="absolute top-4 right-4 bg-green-400 text-white px-3 py-1 rounded-full text-xs font-bold">
-                          NEW ✨
-                        </div>
-                      )}
-                      {index === 2 && (
-                        <div className="absolute top-4 right-4 bg-purple-400 text-white px-3 py-1 rounded-full text-xs font-bold">
-                          EXCLUSIVE 👑
-                        </div>
-                      )}
+                    {/* Feature Badges */}
+                    <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                      FEATURED
                     </div>
-
-                    {/* Content Section */}
-                    <div className="lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center relative">
-                      {/* Background Pattern */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-red-25 to-transparent opacity-30"></div>
-                      
-                      <div className="relative z-10">
-                        {/* Category Tag */}
-                        <div className="inline-block bg-red-100 text-red-700 px-3 py-1 rounded-lg text-sm font-medium mb-4">
-                          {index === 0 ? "Summer Sale" : index === 1 ? "New Arrivals" : "Exclusive Deals"}
-                        </div>
-
-                        {/* Title */}
-                        <h2 className="text-2xl lg:text-4xl font-bold mb-4 text-gray-900 leading-tight">
-                          {ad.title}
-                        </h2>
-
-                        {/* Description */}
-                        <p className="text-gray-600 text-base lg:text-lg mb-6 leading-relaxed">
-                          {ad.description}
-                        </p>
-
-                        {/* Features/Benefits */}
-                        <div className="flex flex-wrap gap-2 mb-8">
-                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                            ✓ Best Price
-                          </span>
-                          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
-                            ✓ Fast Delivery
-                          </span>
-                          <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
-                            ✓ Easy Returns
-                          </span>
-                        </div>
-
-                        {/* CTA Button */}
-                        <div className="flex flex-col sm:flex-row gap-4">
-                          <Link
-                            to={ad.link}
-                            className="group inline-flex items-center justify-center bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                          >
-                            Shop Now
-                            <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                          </Link>
-                          
-                          <Link
-                            to="/explore"
-                            className="inline-flex items-center justify-center border-2 border-red-200 hover:border-red-300 text-red-600 hover:text-red-700 px-8 py-4 rounded-xl font-semibold transition-all duration-300 hover:bg-red-50"
-                          >
-                            {index === 2 ? "Join Now" : "View All"}
-                          </Link>
-                        </div>
-
-                        {/* Price/Discount Info - Show for Summer Sale */}
-                        {index === 0 && (
-                          <div className="mt-6 flex items-center space-x-3">
-                            <span className="text-2xl font-bold text-red-600">
-                              Up to 50% OFF
-                            </span>
-                            <span className="bg-red-500 text-white px-2 py-1 rounded text-sm font-bold">
-                              LIMITED TIME
-                            </span>
-                          </div>
-                        )}
-                        
-                        {/* Member Discount for Exclusive Deals */}
-                        {index === 2 && (
-                          <div className="mt-6 flex items-center space-x-3">
-                            <span className="text-2xl font-bold text-red-600">
-                              Extra Discounts
-                            </span>
-                            <span className="bg-purple-500 text-white px-2 py-1 rounded text-sm font-bold">
-                              MEMBERS ONLY
-                            </span>
-                          </div>
-                        )}
+                    {index === 0 && (
+                      <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                        50% OFF 🔥
                       </div>
-                    </div>
+                    )}
+                    {index === 1 && (
+                      <div className="absolute top-4 right-4 bg-green-400 text-white px-3 py-1 rounded-full text-xs font-bold">
+                        NEW ✨
+                      </div>
+                    )}
+                    {index === 2 && (
+                      <div className="absolute top-4 right-4 bg-purple-400 text-white px-3 py-1 rounded-full text-xs font-bold">
+                        EXCLUSIVE 👑
+                      </div>
+                    )}
                   </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            
-            {/* Navigation */}
-            <CarouselPrevious className="left-4 bg-white/90 border-red-200 hover:bg-white hover:border-red-300 text-red-600" />
-            <CarouselNext className="right-4 bg-white/90 border-red-200 hover:bg-white hover:border-red-300 text-red-600" />
-          </Carousel>
+                ))}
+              </div>
+
+              {/* Navigation Buttons */}
+              <button
+                onClick={prevSlide}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-red-600 p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={nextSlide}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white text-red-600 p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              {/* Dots Indicator */}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                {mockAds.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToSlide(index)}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentSlide 
+                        ? 'bg-white scale-125' 
+                        : 'bg-white/50 hover:bg-white/75'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Static Banners - Desktop: 1 column with 2 rows, Mobile: 2 columns */}
+          <div className="hidden lg:grid grid-cols-2 lg:grid-cols-1 gap-4 lg:gap-6">
+            {staticBanners.map((banner, index) => {
+              const IconComponent = banner.icon
+              return (
+                <div
+                  key={banner.id}
+                  className="relative bg-white rounded-2xl lg:rounded-3xl shadow-lg overflow-hidden border border-red-100 hover:shadow-xl transition-all duration-300 group cursor-pointer"
+                >
+                  <div className="relative h-32 lg:h-full min-h-[120px] lg:min-h-[235px]">
+                    <img
+                      src={banner.image}
+                      alt={banner.title}
+                      className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-700"
+                    />
+
+                    {/* Hover Effect */}
+                    <div className="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300" />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* Bottom Stats/Features */}
-        <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="text-center p-4 bg-white rounded-xl shadow-sm border border-red-100">
-            <div className="text-2xl font-bold text-red-600 mb-1">10M+</div>
-            <div className="text-sm text-gray-600">Happy Customers</div>
+        {/* <div className="mt-8 lg:mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div className="text-center p-4 bg-white rounded-xl shadow-sm border border-red-100 hover:shadow-md transition-shadow duration-300">
+            <div className="text-xl lg:text-2xl font-bold text-red-600 mb-1">10M+</div>
+            <div className="text-xs lg:text-sm text-gray-600">Happy Customers</div>
           </div>
-          <div className="text-center p-4 bg-white rounded-xl shadow-sm border border-red-100">
-            <div className="text-2xl font-bold text-red-600 mb-1">50K+</div>
-            <div className="text-sm text-gray-600">Products</div>
+          <div className="text-center p-4 bg-white rounded-xl shadow-sm border border-red-100 hover:shadow-md transition-shadow duration-300">
+            <div className="text-xl lg:text-2xl font-bold text-red-600 mb-1">50K+</div>
+            <div className="text-xs lg:text-sm text-gray-600">Products</div>
           </div>
-          <div className="text-center p-4 bg-white rounded-xl shadow-sm border border-red-100">
-            <div className="text-2xl font-bold text-red-600 mb-1">195+</div>
-            <div className="text-sm text-gray-600">Countries</div>
+          <div className="text-center p-4 bg-white rounded-xl shadow-sm border border-red-100 hover:shadow-md transition-shadow duration-300">
+            <div className="text-xl lg:text-2xl font-bold text-red-600 mb-1">195+</div>
+            <div className="text-xs lg:text-sm text-gray-600">Countries</div>
           </div>
-          <div className="text-center p-4 bg-white rounded-xl shadow-sm border border-red-100">
-            <div className="text-2xl font-bold text-red-600 mb-1">24/7</div>
-            <div className="text-sm text-gray-600">Support</div>
+          <div className="text-center p-4 bg-white rounded-xl shadow-sm border border-red-100 hover:shadow-md transition-shadow duration-300">
+            <div className="text-xl lg:text-2xl font-bold text-red-600 mb-1">24/7</div>
+            <div className="text-xs lg:text-sm text-gray-600">Support</div>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   )
