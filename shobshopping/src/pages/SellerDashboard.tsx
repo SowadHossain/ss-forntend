@@ -37,16 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { Textarea } from "../components/ui/textarea";
 import { API } from "../lib/api";
 
-const mockAnalytics = {
-  totalRevenue: 46128.76,
-  revenueGrowth: 15.2,
-  totalOrders: 124,
-  ordersGrowth: 8.7,
-  totalProducts: 3,
-  avgRating: 4.8,
-  conversionRate: 3.2,
-  conversionGrowth: 2.1,
-};
+// computed analytics derived from products and orders
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
@@ -68,7 +59,7 @@ export default function SellerDashboard() {
     name: "",
     description: "",
     price: "",
-  original_price: "",
+    original_price: "",
     stock_quantity: "",
     category_id: "",
     tag_ids: [] as number[],
@@ -190,6 +181,118 @@ export default function SellerDashboard() {
   
   const userRole = (profile?.role || "").toString().toLowerCase()
   const isSeller = userRole === "seller"
+
+  // Compute analytics based on fetched products and orders
+  const analytics = React.useMemo(() => {
+    // total revenue from products if available, otherwise sum order totals when they exist
+    let totalRevenue = 0
+    if (Array.isArray(products) && products.length > 0) {
+      totalRevenue = products.reduce((sum, p) => {
+        const rev = parseFloat(String(p.revenue || 0))
+        return sum + (isNaN(rev) ? 0 : rev)
+      }, 0)
+    }
+
+    // fallback: try to sum order totals when product revenue not provided
+    if (totalRevenue === 0 && Array.isArray(orders) && orders.length > 0) {
+      totalRevenue = orders.reduce((sum, o) => {
+        // try to extract numeric value from o.total which may be 'BDT 123' or number
+        const t = o.total
+        if (typeof t === 'number') return sum + t
+        if (typeof t === 'string') {
+          const n = parseFloat(t.replace(/[^0-9.-]+/g, ''))
+          return sum + (isNaN(n) ? 0 : n)
+        }
+        return sum
+      }, 0)
+    }
+
+    const totalProducts = Array.isArray(products) ? products.length : 0
+
+    // average rating across products (weighted equally)
+    const avgRating = (() => {
+      if (!Array.isArray(products) || products.length === 0) return 0
+      const sum = products.reduce((s, p) => s + (parseFloat(String(p.rating || 0)) || 0), 0)
+      return +(sum / products.length).toFixed(2)
+    })()
+
+    const totalOrders = Array.isArray(orders) ? orders.length : 0
+
+    // conversion rate: orders / visitors approximation. If products have 'views' use them; else use orders/products as rough proxy.
+    let conversionRate = 0
+    const totalViews = Array.isArray(products) ? products.reduce((s, p) => s + (parseInt(String(p.views || 0)) || 0), 0) : 0
+    if (totalViews > 0) {
+      conversionRate = +( (totalOrders / totalViews) * 100 ).toFixed(2)
+    } else if (products.length > 0) {
+      // fallback heuristic: orders per product
+      conversionRate = +((totalOrders / products.length) * 100).toFixed(2)
+    }
+
+    // growth metrics: simple month-over-month using created_at dates when available
+    const revenueGrowth = (() => {
+      try {
+        const now = new Date()
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const startOfLastMonth = lastMonthStart
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+
+        const revenueThisMonth = (Array.isArray(orders) ? orders : []).reduce((sum, o) => {
+          const d = o.created_at ? new Date(o.created_at) : null
+          if (!d) return sum
+          if (d >= startOfMonth) {
+            const t = typeof o.total === 'number' ? o.total : parseFloat(String(o.total || '').replace(/[^0-9.-]+/g, ''))
+            return sum + (isNaN(t) ? 0 : t)
+          }
+          return sum
+        }, 0)
+
+        const revenueLastMonth = (Array.isArray(orders) ? orders : []).reduce((sum, o) => {
+          const d = o.created_at ? new Date(o.created_at) : null
+          if (!d) return sum
+          if (d >= startOfLastMonth && d <= endOfLastMonth) {
+            const t = typeof o.total === 'number' ? o.total : parseFloat(String(o.total || '').replace(/[^0-9.-]+/g, ''))
+            return sum + (isNaN(t) ? 0 : t)
+          }
+          return sum
+        }, 0)
+
+        if (revenueLastMonth === 0) return revenueThisMonth === 0 ? 0 : 100
+        return +(((revenueThisMonth - revenueLastMonth) / Math.abs(revenueLastMonth)) * 100).toFixed(2)
+      } catch {
+        return 0
+      }
+    })()
+
+    const ordersGrowth = (() => {
+      try {
+        const now = new Date()
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const startOfLastMonth = lastMonthStart
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+
+        const ordersThisMonth = (Array.isArray(orders) ? orders : []).filter(o => o.created_at && new Date(o.created_at) >= startOfMonth).length
+        const ordersLastMonth = (Array.isArray(orders) ? orders : []).filter(o => o.created_at && new Date(o.created_at) >= startOfLastMonth && new Date(o.created_at) <= endOfLastMonth).length
+
+        if (ordersLastMonth === 0) return ordersThisMonth === 0 ? 0 : 100
+        return +(((ordersThisMonth - ordersLastMonth) / Math.abs(ordersLastMonth)) * 100).toFixed(2)
+      } catch {
+        return 0
+      }
+    })()
+
+    return {
+      totalRevenue,
+      revenueGrowth,
+      totalOrders,
+      ordersGrowth,
+      totalProducts,
+      avgRating,
+      conversionRate,
+      conversionGrowth: 0,
+    }
+  }, [products, orders])
 
   // Component to handle adding stock (only increase allowed)
   function StockUpdater({ product, onUpdated }: { product: any; onUpdated?: (p: any) => void }) {
@@ -382,9 +485,9 @@ export default function SellerDashboard() {
                     <DollarSign className="w-4 h-4 mr-2 text-red-500" />
                     Total Revenue
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">BDT {mockAnalytics.totalRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-gray-900">BDT {analytics.totalRevenue ? analytics.totalRevenue.toLocaleString() : 0}</p>
                   <p className="text-xs text-red-600 flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 mr-1 text-red-500" />+{mockAnalytics.revenueGrowth}% this month
+                    <TrendingUp className="w-3 h-3 mr-1 text-red-500" />+{analytics.revenueGrowth}% this month
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-red-400 to-rose-500 rounded-full flex items-center justify-center">
@@ -403,9 +506,9 @@ export default function SellerDashboard() {
                     <ShoppingCart className="w-4 h-4 mr-2 text-red-500" />
                     Total Orders
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">{mockAnalytics.totalOrders}</p>
+                  <p className="text-2xl font-bold text-gray-900">{analytics.totalOrders}</p>
                   <p className="text-xs text-red-600 flex items-center mt-1">
-                    <TrendingUp className="w-3 h-3 mr-1 text-red-500" />+{mockAnalytics.ordersGrowth}% this month
+                    <TrendingUp className="w-3 h-3 mr-1 text-red-500" />+{analytics.ordersGrowth}% this month
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-[#cd2733] to-purple-500 rounded-full flex items-center justify-center">
@@ -424,7 +527,7 @@ export default function SellerDashboard() {
                     <Package className="w-4 h-4 mr-2 text-red-500" />
                     Products Listed
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">{mockAnalytics.totalProducts}</p>
+                  <p className="text-2xl font-bold text-gray-900">{analytics.totalProducts}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     {products.filter((p) => p.moderation_status === "APPROVED").length} approved
                   </p>
@@ -445,7 +548,7 @@ export default function SellerDashboard() {
                     <Star className="w-4 h-4 mr-2 text-yellow-400" />
                     Avg Rating
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">{mockAnalytics.avgRating}</p>
+                  <p className="text-2xl font-bold text-gray-900">{analytics.avgRating}</p>
                   <p className="text-xs text-gray-500 mt-1">Based on customer reviews</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
@@ -719,15 +822,15 @@ export default function SellerDashboard() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-green-600">{String(mockAnalytics.totalRevenue).startsWith("BDT") ? mockAnalytics.totalRevenue : `BDT ${mockAnalytics.totalRevenue.toLocaleString()}`}</p>
+                    <p className="text-2xl font-bold text-green-600">{analytics.totalRevenue ? `BDT ${analytics.totalRevenue.toLocaleString()}` : 'BDT 0'}</p>
                     <p className="text-sm text-gray-600">Total Revenue</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-[#cd2733]">{mockAnalytics.totalOrders}</p>
+                    <p className="text-2xl font-bold text-[#cd2733]">{analytics.totalOrders}</p>
                     <p className="text-sm text-gray-600">Total Orders</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-purple-600">{mockAnalytics.conversionRate}%</p>
+                    <p className="text-2xl font-bold text-purple-600">{analytics.conversionRate}%</p>
                     <p className="text-sm text-gray-600">Conversion Rate</p>
                   </div>
                 </div>
@@ -1080,7 +1183,7 @@ export default function SellerDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Revenue Growth</p>
-                      <p className="text-2xl font-bold text-green-600">+{mockAnalytics.revenueGrowth}%</p>
+                      <p className="text-2xl font-bold text-green-600">+{analytics.revenueGrowth}%</p>
                     </div>
                     <TrendingUp className="w-8 h-8 text-green-500" />
                   </div>
@@ -1092,7 +1195,7 @@ export default function SellerDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Order Growth</p>
-                      <p className="text-2xl font-bold text-[#cd2733]">+{mockAnalytics.ordersGrowth}%</p>
+                      <p className="text-2xl font-bold text-[#cd2733]">+{analytics.ordersGrowth}%</p>
                     </div>
                     <ShoppingCart className="w-8 h-8 text-[#cd2733]" />
                   </div>
@@ -1104,7 +1207,7 @@ export default function SellerDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
-                      <p className="text-2xl font-bold text-purple-600">{mockAnalytics.conversionRate}%</p>
+                      <p className="text-2xl font-bold text-purple-600">{analytics.conversionRate}%</p>
                     </div>
                     <BarChart3 className="w-8 h-8 text-purple-500" />
                   </div>
@@ -1116,7 +1219,7 @@ export default function SellerDashboard() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Avg Rating</p>
-                      <p className="text-2xl font-bold text-yellow-600">{mockAnalytics.avgRating}</p>
+                      <p className="text-2xl font-bold text-yellow-600">{analytics.avgRating}</p>
                     </div>
                     <Star className="w-8 h-8 text-yellow-500" />
                   </div>

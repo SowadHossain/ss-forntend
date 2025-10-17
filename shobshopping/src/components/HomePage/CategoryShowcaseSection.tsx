@@ -25,33 +25,52 @@ export default function CategoryShowcaseSection({ title, products, link }: Categ
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
-          {link && (
-            <a href={link} className="text-blue-600 hover:underline text-sm">
-              More
-            </a>
-          )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
           {products && products.length > 0 ? (
-            products.map((product) => (
-              <div key={product.id}>
-                {/* Ensure product has category in expected shape */}
-                <ProductCard
-                  product={{
-                    ...product,
-                    id: String(product.id),
-                    price: product.price,
-                    image: product.image,
-                    category: (product as any).category
-                      ? typeof (product as any).category === "string"
-                        ? { name: String((product as any).category) }
-                        : { name: String(((product as any).category as any).name ?? "") }
-                      : undefined,
-                  }}
-                />
-              </div>
-            ))
+            // Render products but if `link` is provided, replace the last product card with a "See more" card
+            products.map((product, idx) => {
+              const isLast = idx === products.length - 1
+
+              if (isLast && link) {
+                // Render a special "See more" card in place of the last product
+                return (
+                  <div key={`more-${idx}`}>
+                    <Card className="h-full border bg-white rounded-lg flex items-center justify-center hover:shadow-md">
+                      <CardContent className="p-4 text-center">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2">See more</h3>
+                        <p className="text-sm text-gray-600">Explore more items in this category</p>
+                        <div className="mt-4">
+                          <a href={link} className="inline-block px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700">
+                            View all
+                          </a>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )
+              }
+
+              return (
+                <div key={product.id}>
+                  {/* Ensure product has category in expected shape */}
+                  <ProductCard
+                    product={{
+                      ...product,
+                      id: String(product.id),
+                      price: product.price,
+                      image: product.image,
+                      category: (product as any).category
+                        ? typeof (product as any).category === "string"
+                          ? { name: String((product as any).category) }
+                          : { name: String(((product as any).category as any).name ?? "") }
+                        : undefined,
+                    }}
+                  />
+                </div>
+              )
+            })
           ) : (
             <div className="col-span-2 sm:col-span-3 md:col-span-2 lg:col-span-2">
               <Card className="h-full border-2 border-dashed border-gray-200 bg-white rounded-lg flex items-center justify-center shadow-sm">

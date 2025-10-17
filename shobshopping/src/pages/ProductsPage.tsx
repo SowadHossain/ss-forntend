@@ -6,10 +6,7 @@ import { Input } from "../components/ui/input";
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
+  SheetTrigger
 } from "../components/ui/sheet";
 import { useCart } from "../context/CartContext";
 import { API } from "../lib/api";
@@ -51,6 +48,7 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState("relevance");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([]);
   const [selectedSellers, setSelectedSellers] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
@@ -133,6 +131,7 @@ export default function ProductsPage() {
 
     const query = searchParams.get("query") || "";
     const categories = parseList(searchParams.get("categories"));
+    const subcategories = parseList(searchParams.get("sub-category"));
     const sellers = parseList(searchParams.get("sellers"));
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const view = (searchParams.get("view") as "grid" | "list") || "grid";
@@ -142,6 +141,7 @@ export default function ProductsPage() {
 
     setSearchQuery(query);
     setSelectedCategories(categories);
+  setSelectedSubcategories(subcategories);
     setSelectedSellers(sellers);
     setCurrentPage(page);
   // Respect cookie-stored preference if consent given, otherwise use URL param
@@ -174,6 +174,7 @@ export default function ProductsPage() {
     
     if (searchQuery.trim()) params.set("query", searchQuery.trim());
     if (selectedCategories.length) params.set("categories", selectedCategories.map(encodeURIComponent).join(","));
+  if (selectedSubcategories.length) params.set("sub-category", selectedSubcategories.map(encodeURIComponent).join(","));
     if (selectedSellers.length) params.set("sellers", selectedSellers.map(encodeURIComponent).join(","));
     if (priceRange[0] !== 0) params.set("price_min", priceRange[0].toString());
     if (priceRange[1] !== 500) params.set("price_max", priceRange[1].toString());
@@ -187,11 +188,22 @@ export default function ProductsPage() {
     if (currentParams !== newParams) {
       setSearchParams(params, { replace: true });
     }
-  }, [searchQuery, selectedCategories, selectedSellers, priceRange, currentPage, viewMode, sortBy, searchParams, setSearchParams]);
+  }, [searchQuery, selectedCategories, selectedSubcategories, selectedSellers, priceRange, currentPage, viewMode, sortBy, searchParams, setSearchParams]);
+
+  // Handler for subcategory selection
+  const handleSubcategoryChange = (subcategory: string, checked: boolean) => {
+    setSelectedSubcategories(prev =>
+      checked ? [...prev, subcategory] : prev.filter(c => c !== subcategory)
+    );
+  };
 
   // Enhanced filtering and sorting logic
   // Derive top-level categories (parent === null) for the sidebar
   const topLevelCategories = categories.filter((c: any) => c?.parent === null || c?.parent === undefined)
+  // Derive subcategory names (where parent !== null)
+  const subcategoryOptions = categories
+    .filter((c: any) => c?.parent !== null && c?.parent !== undefined)
+    .map((c: any) => c.name)
 
   const processedProducts = products
     .map((product: Product) => {
@@ -229,6 +241,7 @@ export default function ProductsPage() {
         _matchScore: matchScore,
         _name: name.toLowerCase(),
         _seller: seller.toLowerCase(),
+        _subcategory: ((product.category as any) && ((product.category as any).name || (product.category as any).parent_name))?.toString().toLowerCase() || "",
       };
     })
     .filter((product: any) => {
@@ -259,6 +272,24 @@ export default function ProductsPage() {
         return false
       })
 
+      // Subcategory filter: allow matching by subcategory name
+      const matchesSubcategory = selectedSubcategories.length === 0 || selectedSubcategories.some(sel => {
+        const selLower = sel.toString().toLowerCase();
+
+        // product.category may represent the subcategory name
+        const prodSub = (product.category && (product.category.name || product.category.parent_name) || "").toString().toLowerCase();
+        if (prodSub && prodSub.includes(selLower)) return true;
+
+        // If selected is numeric, match by id or parent id
+        if (!isNaN(Number(sel))) {
+          const selNum = Number(sel);
+          if (Number(product.category?.id) === selNum) return true;
+          if (Number(product.category?.parent) === selNum) return true;
+        }
+
+        return false;
+      })
+
       // Seller filter
       const matchesSeller = selectedSellers.length === 0 ||
         selectedSellers.some(seller => 
@@ -270,7 +301,7 @@ export default function ProductsPage() {
       const matchesPrice = !hasCustomPriceRange || 
         (product._price >= priceRange[0] && product._price <= priceRange[1]);
 
-      return matchesCategory && matchesSeller && matchesPrice;
+      return matchesCategory && matchesSubcategory && matchesSeller && matchesPrice;
     })
     .sort((a: any, b: any) => {
       // Enhanced sorting logic
@@ -305,7 +336,7 @@ export default function ProductsPage() {
     if (!isInitialMount.current) {
       setCurrentPage(1);
     }
-  }, [searchQuery, selectedCategories, selectedSellers, priceRange, sortBy]);
+  }, [searchQuery, selectedCategories, selectedSubcategories, selectedSellers, priceRange, sortBy]);
 
   // Event handlers
   const handleSearchChange = (value: string) => {
@@ -326,6 +357,7 @@ export default function ProductsPage() {
 
   const handleClearAllFilters = () => {
     setSelectedCategories([]);
+    setSelectedSubcategories([]);
     setSelectedSellers([]);
     setPriceRange([0, 500]);
     setSearchQuery("");
@@ -346,6 +378,7 @@ export default function ProductsPage() {
   // Generate active filter tags for display
   const activeFilterTags = [
     ...selectedCategories.map(cat => `Category: ${cat}`),
+    ...selectedSubcategories.map(sc => `Subcategory: ${sc}`),
     ...selectedSellers.map(seller => `Seller: ${seller}`),
   ...(priceRange[0] !== 0 || priceRange[1] !== 500 ? [`Price: BDT ${priceRange[0]} - BDT ${priceRange[1]}`] : []),
     ...(searchQuery.trim() ? [`Search: "${searchQuery.trim()}"`] : []),
@@ -358,6 +391,9 @@ export default function ProductsPage() {
     } else if (tag.startsWith("Seller: ")) {
       const seller = tag.replace("Seller: ", "");
       setSelectedSellers(prev => prev.filter(s => s !== seller));
+    } else if (tag.startsWith("Subcategory: ")) {
+      const sc = tag.replace("Subcategory: ", "");
+      setSelectedSubcategories(prev => prev.filter(s => s !== sc));
     } else if (tag.startsWith("Price: ")) {
       setPriceRange([0, 500]);
     } else if (tag.startsWith("Search: ")) {

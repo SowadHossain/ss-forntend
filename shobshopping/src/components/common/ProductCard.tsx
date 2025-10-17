@@ -140,13 +140,13 @@ export default function ProductCard({ product }: { product: Product }) {
                 />
               </div>
             </Link>
-            {/* {discountPercent > 0 && (
+            {discountPercent > 0 && (
               <div className="absolute top-3 left-0">
                 <div className="bg-[#cf2633] text-white text-xs font-semibold px-2 py-1 relative">
-                  SAVE {discountPercent}%
+                  {discountPercent}%
                 </div>
               </div>
-            )} */}
+            )}
             {/* {product.badge && !discountPercent && (
               <Badge className="absolute top-2 left-2 bg-pink-700 text-white shadow-lg text-xs">
                 {product.badge}

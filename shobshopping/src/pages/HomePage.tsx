@@ -10,29 +10,40 @@ import { API } from "../lib/api"
 
 export default function HomePage() {
   const [products, setProducts] = useState<any[]>([])
+  const [rawProducts, setRawProducts] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // Helper to parse price into a number. Handles strings like "1,234.56", "$1,234", or numeric types.
-  const parsePrice = (p: any) => {
-    if (p === null || p === undefined) return 0
-    if (typeof p === "number") return p
-    const s = String(p)
-      // remove common currency symbols and spaces
-      .replace(/[^0-9.,-]/g, "")
-      // remove thousand-separators (commas)
-      .replace(/,/g, "")
-    const n = parseFloat(s)
-    return Number.isFinite(n) ? n : 0
-  }
 
   useEffect(() => {
     setLoading(true)
     Promise.all([API.getCategories(), API.getProducts()])
       .then(([catRes, prodRes]) => {
-        // Normalize product list from API response (preserve API order for featured products)
-        const prodList: any[] = prodRes?.results || prodRes || []
+        // Normalize product list from API response
+        const rawProdList: any[] = prodRes?.results || prodRes || []
+        setRawProducts(rawProdList)
+
+        // Helper to parse price into a number. Handles strings like "1,234.56", "$1,234", or numeric types.
+        const parsePrice = (p: any) => {
+          if (p === null || p === undefined) return 0
+          if (typeof p === "number") return p
+          const s = String(p)
+            // remove common currency symbols and spaces
+            .replace(/[^0-9.,-]/g, "")
+            // remove thousand-separators (commas)
+            .replace(/,/g, "")
+          const n = parseFloat(s)
+          return Number.isFinite(n) ? n : 0
+        }
+
+        // Sort products by price descending (high to low)
+        const prodList = Array.isArray(rawProdList)
+          ? [...rawProdList].sort((a: any, b: any) => {
+              const pa = parsePrice(a?.price)
+              const pb = parsePrice(b?.price)
+              return pb - pa
+            })
+          : rawProdList
         const catList = Array.isArray(catRes) ? catRes : (catRes?.results || [])
         setProducts(prodList)
         setCategories(catList)
@@ -78,7 +89,7 @@ export default function HomePage() {
 
       {/* <div className="border-t-4 border-red-50"></div> */}
 
-      <FeaturedProductsSection products={products} />
+      <FeaturedProductsSection products={rawProducts} />
 
       {/* Show a few category showcases derived from API categories */}
       {categories
@@ -89,7 +100,7 @@ export default function HomePage() {
         const getShowcaseCount = () => {
           if (typeof window !== "undefined") {
             const width = window.innerWidth
-            if (width < 768) return 2 // phone
+            // if (width < 768) return 4 // phone
             if (width < 1024) return 4 // tablet
           }
           return 5 // pc
@@ -124,8 +135,6 @@ export default function HomePage() {
 
         const categoryProducts = products
           .filter((p) => productMatchesCategory(p.category, category))
-          // sort only for this category showcase by price descending
-          .sort((a: any, b: any) => parsePrice(b?.price) - parsePrice(a?.price))
           .slice(0, showcaseCount)
           .map((p) => ({
             id: p.id,

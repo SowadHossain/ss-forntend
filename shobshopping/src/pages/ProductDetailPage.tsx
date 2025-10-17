@@ -37,7 +37,7 @@ type ProductType = {
   image?: string;
   image_url?: string;
   seller?: any;
-  category?: { id?: number; name?: string } | string | null;
+  category?: { id?: number; name?: string; parent_name?: string } | string | null;
   inStock?: boolean;
   stockCount?: number;
   freeShipping?: boolean;
@@ -46,40 +46,6 @@ type ProductType = {
   specifications?: Record<string, any>;
   variants?: any;
 };
-
-
-const reviews = [
-  {
-    id: 1,
-    user: "John D.",
-    rating: 5,
-    date: "2024-01-15",
-    comment:
-      "Excellent sound quality and very comfortable to wear for long periods. The noise cancellation works great!",
-    helpful: 12,
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: 2,
-    user: "Sarah M.",
-    rating: 4,
-    date: "2024-01-10",
-    comment:
-      "Good headphones overall. Battery life is impressive. Only minor complaint is they can feel a bit tight after extended use.",
-    helpful: 8,
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-  {
-    id: 3,
-    user: "Mike R.",
-    rating: 5,
-    date: "2024-01-05",
-    comment:
-      "Best headphones I've owned. Great value for money and the seller shipped very quickly.",
-    helpful: 15,
-    avatar: "/placeholder.svg?height=32&width=32",
-  },
-];
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -161,6 +127,32 @@ export default function ProductDetailPage() {
   const [reviewsPage, setReviewsPage] = useState<number>(1);
   const REVIEWS_PER_PAGE = 5;
 
+  // Carousel products
+  const [carouselProducts, setCarouselProducts] = useState<ProductType[] | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  const p = product || ({} as ProductType);
+  // Normalize fields returned by the API to convenient local variables
+  // Product API may return a nested category with parent id and parent_name.
+  // Build a normalized category object with helpful fallbacks.
+  const rawCategory: any = typeof p.category === 'string' ? { name: p.category } : (p.category || null);
+  const normalizedCategory = {
+    id: rawCategory?.id ?? undefined,
+    name: rawCategory?.name ?? '',
+    parentId: rawCategory?.parent ?? null,
+    parentName: rawCategory?.parent_name ?? null,
+  };
+
+  // Choose a display category for breadcrumb/badge/links.
+  // Prefer parentName when present (so link goes to parent/top-level category),
+  // otherwise use the category name.
+  const categoryName = normalizedCategory.parentName || normalizedCategory.name || '';
+  // Build a unified media list that includes images and media entries (images/videos)
+  type MediaItem = { type: 'IMAGE' | 'VIDEO'; url: string };
+  const rawImages: string[] = (p.images && (p.images as any).length) ? (p.images as string[]) : (
+    p.image ? [p.image as string] : (p.image_url ? [p.image_url as string] : [])
+  );
+
   // Fetch reviews for this product (client-side filter by product id)
   useEffect(() => {
     if (!id) return;
@@ -186,6 +178,50 @@ export default function ProductDetailPage() {
       cancelled = true;
     };
   }, [id]);
+
+  // Load carousel products (top 5) - prefer same category as normalizedCategory.name
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const all = await API.getProducts();
+        if (cancelled) return;
+        if (!Array.isArray(all)) return;
+
+        // normalize target category name for comparison
+        const targetCat = (normalizedCategory.name || "").toString().trim().toLowerCase();
+
+        // remove current product
+        let candidates = all.filter((x: any) => Number(x.id) !== Number(id));
+
+        // if we have a target category, filter candidates to the same category (robust to string/object category)
+        if (targetCat) {
+          candidates = candidates.filter((x: any) => {
+            const cat = x.category;
+            if (!cat) return false;
+            if (typeof cat === "string") {
+              return cat.toString().trim().toLowerCase() === targetCat;
+            }
+            // object category
+            const name = (cat.name || cat.parent_name || "").toString().trim().toLowerCase();
+            return name === targetCat;
+          });
+        }
+
+        // fallback: if filtering produced no results and we had a target, fall back to unfiltered list (excluding current)
+        const finalList = (candidates.length === 0 && targetCat) ? all.filter((x: any) => Number(x.id) !== Number(id)) : candidates;
+
+        setCarouselProducts(finalList.slice(0, 5));
+        setCarouselIndex(0);
+      } catch (e) {
+        // ignore carousel errors silently
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, normalizedCategory.name]);
 
   if (loading) {
     return (
@@ -217,28 +253,6 @@ export default function ProductDetailPage() {
       </div>
     );
   }
-
-  const p = product || ({} as ProductType);
-  // Normalize fields returned by the API to convenient local variables
-  // Product API may return a nested category with parent id and parent_name.
-  // Build a normalized category object with helpful fallbacks.
-  const rawCategory: any = typeof p.category === 'string' ? { name: p.category } : (p.category || null);
-  const normalizedCategory = {
-    id: rawCategory?.id ?? undefined,
-    name: rawCategory?.name ?? '',
-    parentId: rawCategory?.parent ?? null,
-    parentName: rawCategory?.parent_name ?? null,
-  };
-
-  // Choose a display category for breadcrumb/badge/links.
-  // Prefer parentName when present (so link goes to parent/top-level category),
-  // otherwise use the category name.
-  const categoryName = normalizedCategory.parentName || normalizedCategory.name || '';
-  // Build a unified media list that includes images and media entries (images/videos)
-  type MediaItem = { type: 'IMAGE' | 'VIDEO'; url: string };
-  const rawImages: string[] = (p.images && (p.images as any).length) ? (p.images as string[]) : (
-    p.image ? [p.image as string] : (p.image_url ? [p.image_url as string] : [])
-  );
 
   const productMedia = (p as any).media || (p as any).media_items || [];
   const mediaItems: MediaItem[] = [];
@@ -349,7 +363,7 @@ export default function ProductDetailPage() {
             <span>/</span>
             <Link to="/products" className="hover:text-blue-600">Products</Link>
             <span>/</span>
-            <Link to={`/products?category=${categoryName.toString().toLowerCase()}`} className="hover:text-blue-600">{categoryName}</Link>
+            <Link to={`/products?categories=${encodeURIComponent(categoryName.toString())}`} className="hover:text-blue-600">{categoryName}</Link>
             <span>/</span>
             <span className="text-gray-900">{p.name}</span>
           </nav>
@@ -780,6 +794,67 @@ export default function ProductDetailPage() {
             </aside>
           </div>
         </div> */}
+        
+        {/* Carousel Section */}
+        {/* Related products carousel (mobile-friendly horizontal scroll + desktop controls) */}
+        {carouselProducts && carouselProducts.length > 0 && (
+          <div className="mt-6 mb-12">
+            {/* Use same container as main content so margins align */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold">You may also like</h3>
+                <div className="hidden sm:flex items-center space-x-2">
+                  <button
+                    aria-label="previous carousel"
+                    onClick={() => setCarouselIndex((i) => Math.max(0, i - 1))}
+                    className="p-2 bg-white rounded border hover:bg-gray-50"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    aria-label="next carousel"
+                    onClick={() => setCarouselIndex((i) => Math.min((carouselProducts || []).length - 1, i + 1))}
+                    className="p-2 bg-white rounded border hover:bg-gray-50"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile: horizontal scroll; Desktop: show 4 items with translate */}
+              <div className="relative">
+                <div className="sm:hidden flex space-x-3 overflow-x-auto pb-2 -mx-4 px-4">
+                  {carouselProducts.map((cp) => (
+                    <Link key={cp.id} to={`/products/${cp.id}`} className="w-40 min-w-[160px] bg-white rounded-lg border overflow-hidden">
+                      <img src={(cp.image || cp.image_url || (cp.images && cp.images[0]) || '/placeholder.svg')} alt={cp.name} className="w-full h-28 object-cover" />
+                      <div className="p-2">
+                        <div className="text-sm font-medium text-gray-800 truncate">{cp.name}</div>
+                        <div className="text-sm text-gray-600">BDT {cp.price ?? ''}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="hidden sm:block overflow-hidden">
+                  <div className="flex transition-transform duration-300" style={{ transform: `translateX(-${carouselIndex * 220}px)` }}>
+                    {carouselProducts.map((cp) => (
+                      <Link key={cp.id} to={`/products/${cp.id}`} className="w-56 flex-shrink-0 px-2">
+                        <div className="bg-white rounded-lg border overflow-hidden">
+                          <img src={(cp.image || cp.image_url || (cp.images && cp.images[0]) || '/placeholder.svg')} alt={cp.name} className="w-full h-36 object-cover" />
+                          <div className="p-3">
+                            <div className="text-sm font-medium text-gray-800 truncate">{cp.name}</div>
+                            <div className="text-sm text-gray-600">BDT {cp.price ?? ''}</div>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
 
       <FooterSection />

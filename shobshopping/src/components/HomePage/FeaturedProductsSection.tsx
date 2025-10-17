@@ -44,14 +44,14 @@ export default function FeaturedProductsSection({ products }: FeaturedProductsSe
       _ratingNum: Number((p as any).rating) || 0,
       _reviewsNum: Number((p as any).reviews) || 0,
     }))
-    .sort((a, b) => {
-      // primary: price desc
-      if (b._priceNum !== a._priceNum) return b._priceNum - a._priceNum
-      // secondary: rating desc
-      if (b._ratingNum !== a._ratingNum) return b._ratingNum - a._ratingNum
-      // tertiary: reviews desc
-      return b._reviewsNum - a._reviewsNum
-    })
+    // .sort((a, b) => {
+    //   // primary: price desc
+    //   if (b._priceNum !== a._priceNum) return b._priceNum - a._priceNum
+    //   // secondary: rating desc
+    //   if (b._ratingNum !== a._ratingNum) return b._ratingNum - a._ratingNum
+    //   // tertiary: reviews desc
+    //   return b._reviewsNum - a._reviewsNum
+    // })
     .slice(0, 8)
 
   return (

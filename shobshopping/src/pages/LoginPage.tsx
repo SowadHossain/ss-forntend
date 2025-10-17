@@ -214,7 +214,7 @@ export default function AuthPage() {
                           type="email"
                           value={loginData.email}
                           onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                          placeholder="you@example.com"
+                          placeholder="Your Email"
                           className="pl-10"
                           required
                         />
@@ -272,7 +272,7 @@ export default function AuthPage() {
                         <Input
                           value={registerData.name}
                           onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                          placeholder="John Doe"
+                          placeholder="Your Full Name"
                           className="pl-10"
                           required
                         />
@@ -286,7 +286,7 @@ export default function AuthPage() {
                           type="email"
                           value={registerData.email}
                           onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
-                          placeholder="you@example.com"
+                          placeholder="Your Email"
                           className="pl-10"
                           required
                         />
@@ -311,7 +311,7 @@ export default function AuthPage() {
                     </div>
                     <div>
                       <Label>Confirm Password</Label>
-                      <div className="relative">
+                        <div className="relative">
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <Input
                           type={showPassword ? "text" : "password"}
@@ -321,7 +321,7 @@ export default function AuthPage() {
                           className="pl-10"
                           required
                         />
-                      </div>
+                        </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -343,12 +343,12 @@ export default function AuthPage() {
               </Tabs>
 
               {/* DEMO ACCOUNTS */}
-              <div className="mt-4 text-center">
+              {/* <div className="mt-4 text-center">
                 <p className="text-sm text-gray-600">Demo Accounts:</p>
                 <p className="text-xs text-gray-500 mt-1">
                   admin@demo.com | seller@demo.com | buyer@demo.com <br /> Password: demo123
                 </p>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         </div>

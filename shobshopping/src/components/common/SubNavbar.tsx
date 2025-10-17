@@ -101,13 +101,55 @@ export default function SubNavbar() {
 
                 {/* Dropdown */}
                 <div className="absolute left-0 top-full mt-1 w-72 bg-white border border-gray-200 shadow-md rounded-md p-3 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150">
-                  <ul className="max-h-64 overflow-y-auto space-y-1">
-                    {cat.subcategories.map((sub) => (
-                      <li key={sub.id} className="text-xs text-gray-700 hover:text-blue-600 cursor-pointer">
-                        {sub.name} <span className="text-[10px] text-gray-400">({sub.count})</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {/* Group subcategories by a visible prefix to make long lists easier to scan.
+                      Example grouping: "abs - 1", "abs - 2" => group header "abs" with children.
+                      If no prefix found, they go into an "Other" group. */}
+                  <div className="max-h-64 overflow-y-auto">
+                    {/** Build groups: prefix => items **/}
+                    {(() => {
+                      type Group = { key: string; items: Subcat[] }
+
+                      const groupsMap = new Map<string, Subcat[]>()
+
+                      cat.subcategories.forEach((s) => {
+                        const parts = s.name.split(" - ")
+                        const key = parts.length > 1 ? parts[0].trim() : "Other"
+                        const arr = groupsMap.get(key) ?? []
+                        arr.push(s)
+                        groupsMap.set(key, arr)
+                      })
+
+                      const groups: Group[] = Array.from(groupsMap.entries()).map(([k, v]) => ({ key: k, items: v }))
+
+                      // Render groups in a responsive grid. Small lists show single column, larger show 2-3.
+                      return (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {groups.map((g) => (
+                            <div key={g.key} className="space-y-1">
+                              <div className="text-[11px] font-medium text-gray-600">{g.key}</div>
+                              <ul className="space-y-1">
+                                {g.items.map((sub) => (
+                                  <li key={sub.id}>
+                                    <a
+                                      href={`/products?sub-category=${encodeURIComponent(sub.name)}`}
+                                      className="text-xs text-gray-700 hover:text-blue-600 block w-full"
+                                    >
+                                      {(() => {
+                                        // Show the remainder after the prefix for compactness when possible
+                                        const parts = sub.name.split(" - ")
+                                        return parts.length > 1 ? parts.slice(1).join(" - ") : sub.name
+                                      })()}
+                                      <span className="ml-1 text-[10px] text-gray-400">({sub.count})</span>
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()}
+                  </div>
                 </div>
               </li>
             ))}

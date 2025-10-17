@@ -206,8 +206,52 @@ export default function Navbar() {
       try {
         const data = await API.getProducts(q)
         const list: any[] = Array.isArray(data) ? data : data.results ?? data.data ?? []
-        setSuggestions(list.slice(0, 8))
-        setShowSuggestions(true)
+
+        // Build a list of unique suggestion terms (words or full phrases)
+        const qLower = q.toLowerCase()
+
+        // Use a map to deduplicate case-insensitively and prefer variants with uppercase letters
+        const termsMap = new Map<string, string>() // key: lowercased term, value: preferred original term
+
+        for (const item of list) {
+          const name = (item?.name || item?.title || "").trim()
+          if (!name) continue
+
+          // helper to consider a term for inclusion
+          const consider = (term: string) => {
+            const cleaned = term.replace(/[^\w\-']/g, "")
+            if (!cleaned) return
+            if (!cleaned.toLowerCase().includes(qLower)) return
+            const key = cleaned.toLowerCase()
+            const existing = termsMap.get(key)
+            if (!existing) {
+              termsMap.set(key, term)
+            } else {
+              // prefer existing if it contains uppercase, otherwise replace if new has uppercase
+              const existingHasUpper = /[A-Z]/.test(existing)
+              const newHasUpper = /[A-Z]/.test(term)
+              if (!existingHasUpper && newHasUpper) {
+                termsMap.set(key, term)
+              }
+            }
+          }
+
+          // include full name if it contains the query
+          if (name.toLowerCase().includes(qLower)) consider(name)
+
+          // also add individual words that contain the query
+          for (const part of name.split(/\s+/)) {
+            consider(part)
+          }
+        }
+
+        // Convert map values to array, sort alphabetically (case-insensitive) and limit to 8
+        const terms = Array.from(termsMap.values())
+          .sort((a, b) => a.toString().toLowerCase().localeCompare(b.toString().toLowerCase()))
+          .slice(0, 8)
+
+        setSuggestions(terms)
+        setShowSuggestions(terms.length > 0)
       } catch (err) {
         console.error("Failed to load product suggestions:", err)
         setSuggestions([])
@@ -309,31 +353,33 @@ export default function Navbar() {
               </button>
 
               {/* Suggestions dropdown (desktop) */}
-              {/* {showSuggestions && (
+              {showSuggestions && (
                 <div ref={suggestionsRef} className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                   {loadingSuggestions ? (
                     <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
                   ) : suggestions.length ? (
-                    suggestions.map((p) => (
+                    suggestions.map((term: any) => (
                       <button
-                        key={p.id}
+                        key={String(term)}
+                        type="button"
                         onClick={() => {
-                          // setShowSuggestions(false)
-                          // setSearchQuery(p.name || p.title || "")
-                          // setMobileOpen(false)
-                          navigate(`/products/${p.id}`)
+                          const t = String(term)
+                          setShowSuggestions(false)
+                          setSearchQuery(t)
+                          setMobileOpen(false)
+                          // navigate to products search results for the term
+                          navigate(`/products?query=${encodeURIComponent(t)}`)
                         }}
                         className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm text-gray-700"
                       >
-                        <div className="font-medium truncate">{p.name || p.title}</div>
-                        <div className="text-xs text-gray-500">{p.seller ? `By ${p.seller}` : p.category?.name}</div>
+                        <div className="font-medium truncate">{String(term)}</div>
                       </button>
                     ))
                   ) : (
                     <div className="px-4 py-3 text-sm text-gray-500">No results</div>
                   )}
                 </div>
-              )} */}
+              )}
             </form>
           </div>
 
@@ -519,32 +565,34 @@ export default function Navbar() {
             >
               Search
             </button>
+            
+            {showSuggestions && (
+              <div ref={suggestionsRef} className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                {loadingSuggestions ? (
+                  <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
+                ) : suggestions.length ? (
+                  suggestions.map((term: any) => (
+                    <button
+                      key={String(term)}
+                      type="button"
+                      onClick={() => {
+                        const t = String(term)
+                        setShowSuggestions(false)
+                        setSearchQuery(t)
+                        setMobileOpen(false)
+                        navigate(`/products?query=${encodeURIComponent(t)}`)
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm text-gray-700"
+                    >
+                      <div className="font-medium truncate">{String(term)}</div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-sm text-gray-500">No results</div>
+                )}
+              </div>
+            )}
 
-                {/* {showSuggestions && (
-                  <div ref={suggestionsRef} className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-                    {loadingSuggestions ? (
-                      <div className="px-4 py-3 text-sm text-gray-500">Searching...</div>
-                    ) : suggestions.length ? (
-                      suggestions.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => {
-                            setShowSuggestions(false)
-                            setSearchQuery(p.name || p.title || "")
-                            setMobileOpen(false)
-                            navigate(`/products/${p.id}`)
-                          }}
-                          className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm text-gray-700"
-                        >
-                          <div className="font-medium truncate">{p.name || p.title}</div>
-                          <div className="text-xs text-gray-500">{p.seller ? `By ${p.seller}` : p.category?.name}</div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-sm text-gray-500">No results</div>
-                    )}
-                  </div>
-                )} */}
           </form>
         </div>
       </div>
