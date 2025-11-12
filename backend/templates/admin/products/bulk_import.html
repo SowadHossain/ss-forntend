@@ -1,0 +1,72 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block title %}Bulk Import Products{% endblock %}
+
+{% block content %}
+<h1>Bulk Import Products</h1>
+
+<p class="help">
+  {{ help_text|linebreaksbr }}
+</p>
+
+<p>
+  <a class="button" href="{{ csv_template_url }}">⬇️ Download CSV Template</a>
+</p>
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+
+  <fieldset class="module aligned">
+    <div class="form-row">
+      {{ form.seller.errors }}
+      <label for="{{ form.seller.id_for_label }}"><strong>Seller</strong>:</label>
+      {{ form.seller }}
+      <div class="help">{{ form.fields.seller.help_text }}</div>
+    </div>
+
+    <div class="form-row">
+      {{ form.csv_file.errors }}
+      <label for="{{ form.csv_file.id_for_label }}"><strong>CSV file</strong>:</label>
+      {{ form.csv_file }}
+      <div class="help">{{ form.fields.csv_file.help_text }}</div>
+    </div>
+
+    <div class="form-row">
+      {{ form.images_zip.errors }}
+      <label for="{{ form.images_zip.id_for_label }}">Images ZIP (optional):</label>
+      {{ form.images_zip }}
+      <div class="help">{{ form.fields.images_zip.help_text }}</div>
+    </div>
+
+    <div class="form-row">
+      {{ form.auto_create_categories.errors }}
+      <label for="{{ form.auto_create_categories.id_for_label }}">Auto-create categories:</label>
+      {{ form.auto_create_categories }}
+      <div class="help">{{ form.fields.auto_create_categories.help_text }}</div>
+    </div>
+  </fieldset>
+
+  <div class="submit-row">
+    <button type="submit" name="preview" class="default">Preview</button>
+  </div>
+</form>
+
+<hr>
+
+<h3>CSV Columns (in order)</h3>
+<pre style="white-space:pre-wrap; padding:10px; background:#f8f8f8; border:1px solid #ddd;">
+{{ headers }}
+</pre>
+
+<h3>Image rules</h3>
+<ul>
+  <li>EITHER provide <code>image_url</code> (http/https) OR <code>image_filename</code> that exists in the uploaded ZIP.</li>
+  <li>For extra media, use:
+    <ul>
+      <li><code>media_urls</code>: <em>TYPE|value;TYPE|value</em> (TYPE is <code>IMAGE</code> or <code>VIDEO</code>)</li>
+      <li><code>media_filenames</code>: <em>TYPE|file.jpg;IMAGE|file2.png;VIDEO|https://...</em> (filenames must be in ZIP)</li>
+    </ul>
+  </li>
+  <li><strong>Any failed image fetch/read will fail that row.</strong></li>
+</ul>
+{% endblock %}

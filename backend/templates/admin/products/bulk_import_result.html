@@ -1,0 +1,37 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Import Result{% endblock %}
+
+{% block content %}
+<h1>Import Result</h1>
+
+<p>
+  Total processed: <strong>{{ result.total }}</strong> —
+  Created: <strong>{{ result.created }}</strong> —
+  Updated: <strong>{{ result.updated }}</strong> —
+  Failed: <strong>{{ result.failed }}</strong>
+</p>
+
+<table class="listing">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Status</th>
+      <th>Message</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in result.rows %}
+      <tr class="{% if r.status == 'failed' %}row-deletelink{% endif %}">
+        <td>{{ r.index }}</td>
+        <td>{{ r.status }}</td>
+        <td>{{ r.message }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p style="margin-top:1rem;">
+  <a class="button" href="{% url 'admin:products_product_bulk_import' %}">⤴️ Import more</a>
+  <a class="button" href="{% url 'admin:products_product_changelist' %}">↩️ Back to products</a>
+</p>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Preview Import{% endblock %}
+
+{% block content %}
+<h1>Preview Import</h1>
+
+<p>
+  Total rows: <strong>{{ total }}</strong> —
+  Invalid: <strong>{{ invalid }}</strong> —
+  Duplicates: <strong>{{ duplicates }}</strong> —
+  New: <strong>{{ new_count }}</strong>
+</p>
+<p>
+  Updates are <strong>OFF by default</strong>. For rows marked “Duplicate”, tick
+  <em>Allow update</em> to update the existing product during commit.
+</p>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ commit_form.payload }}
+
+  <fieldset class="module aligned" style="margin-bottom: 1rem;">
+    <div class="form-row">
+      <label for="id_images_zip">Re-upload Images ZIP (if you used filenames):</label>
+      <input type="file" name="images_zip" id="id_images_zip" accept=".zip">
+      <div class="help">Needed so commit can attach files referenced by <code>image_filename</code> / <code>media_filenames</code>.</div>
+    </div>
+  </fieldset>
+
+  <div class="results">
+    <table class="listing">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Include</th>
+          <th>Allow update</th>
+          <th>Name</th>
+          <th>Reason</th>
+          <th>Errors</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in previews %}
+          <tr class="{% if not p.is_valid %}row-deletelink{% endif %}">
+            <td>{{ forloop.counter0 }}</td>
+            <td>
+              {% if p.is_valid %}
+                <input type="checkbox" name="include_rows" value="{{ forloop.counter0 }}" checked>
+              {% else %}
+                <input type="checkbox" disabled>
+              {% endif %}
+            </td>
+            <td>
+              {% if p.will_update %}
+                <input type="checkbox" name="allow_update_rows" value="{{ forloop.counter0 }}">
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>{{ p.data.name }}</td>
+            <td>{{ p.reason }}</td>
+            <td>
+              {% if p.errors %}
+                <ul style="margin:0;">
+                  {% for e in p.errors %}
+                    <li>{{ e }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="submit-row">
+    <button type="submit" name="commit" class="default">Commit</button>
+  </div>
+</form>
+{% endblock %}

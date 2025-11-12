@@ -1,3 +1,4 @@
+## backend/accounts/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
@@ -50,3 +51,4 @@ class CustomUserAdmin(BaseUserAdmin):
 class SellerProfileAdmin(admin.ModelAdmin):
     list_display = ('store_name', 'user', 'location', 'created_at')
     search_fields = ('store_name', 'user__email', 'location')
+

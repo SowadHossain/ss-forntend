@@ -1,0 +1,17 @@
+{% extends "admin/change_list.html" %}
+
+{% load i18n %}
+
+{% block object-tools-items %}
+  {# keep the default "Add product" button #}
+  {{ block.super }}
+
+  {# add our Bulk Import button next to it #}
+  <li>
+    <a href="{% url 'admin:products_product_bulk_import' %}"
+       class="button"
+       style="margin-left:8px;">
+      {% trans "Bulk import" %}
+    </a>
+  </li>
+{% endblock %}
